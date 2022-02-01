@@ -29,6 +29,8 @@ class _ConversationState extends State<ConversationBar> {
   int st = 0;
   int so = 0;
 
+  final test = 'git';
+
   void location() async {
     Location location = Location();
 
