@@ -1,5 +1,6 @@
 // ignore_for_file: must_be_immutable, prefer_typing_uninitialized_variables
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -23,13 +24,13 @@ class ConversationBar extends StatefulWidget {
 class _ConversationState extends State<ConversationBar> {
   late final TextEditingController controller;
   final recorder = Record();
+  late Timer _timer;
+  String file = '';
   bool voice = false;
   int mt = 0;
   int mo = 0;
   int st = 0;
   int so = 0;
-
-  final test = 'git';
 
   void location() async {
     Location location = Location();
@@ -122,6 +123,11 @@ class _ConversationState extends State<ConversationBar> {
                       ),
                       onPressed: () async {
                         await recorder.stop();
+                        _timer.cancel();
+                        mt = 0;
+                        mo = 0;
+                        st = 0;
+                        so = 0;
                         setState(() {
                           voice = !voice;
                         });
@@ -136,11 +142,17 @@ class _ConversationState extends State<ConversationBar> {
                       icon: const Icon(Icons.send_sharp),
                       onPressed: () async {
                         await recorder.stop();
+                        _timer.cancel();
+                        mt = 0;
+                        mo = 0;
+                        st = 0;
+                        so = 0;
                         var timestamp = DateFormat("hh:mm:ss a")
                             .format(DateTime.now())
                             .toString();
                         widget.update != null
-                            ? widget.update(controller.text, timestamp)
+                            ? widget.update(
+                                controller.text, timestamp, 'audio', file)
                             : null;
                         controller.clear();
                         setState(() {
@@ -274,7 +286,7 @@ class _ConversationState extends State<ConversationBar> {
                                 });
                                 Directory? dir =
                                     await getExternalStorageDirectory();
-                                String file = '';
+
                                 var timestamp = DateFormat("/hh:mm:ss a")
                                         .format(DateTime.now())
                                         .toString() +
@@ -283,6 +295,9 @@ class _ConversationState extends State<ConversationBar> {
                                     ? file = dir.path + timestamp
                                     : null;
                                 await recorder.start(path: file);
+                                _timer = Timer.periodic(
+                                    const Duration(seconds: 1),
+                                    (timer) => watch());
                               } else {
                                 await p.Permission.microphone.request();
                                 if (await p.Permission.microphone.isGranted) {
@@ -291,7 +306,7 @@ class _ConversationState extends State<ConversationBar> {
                                   });
                                   Directory? dir =
                                       await getExternalStorageDirectory();
-                                  String file = '';
+
                                   var timestamp = DateFormat("/hh:mm:ss a")
                                           .format(DateTime.now())
                                           .toString() +
@@ -300,6 +315,9 @@ class _ConversationState extends State<ConversationBar> {
                                       ? file = dir.path + timestamp
                                       : null;
                                   await recorder.start(path: file);
+                                  _timer = Timer.periodic(
+                                      const Duration(seconds: 1),
+                                      (timer) => watch());
                                 }
                               }
                             },
@@ -311,7 +329,8 @@ class _ConversationState extends State<ConversationBar> {
                                   .format(DateTime.now())
                                   .toString();
                               widget.update != null
-                                  ? widget.update(controller.text, timestamp)
+                                  ? widget.update(
+                                      controller.text, timestamp, 'txt', '')
                                   : null;
                               controller.clear();
                             },

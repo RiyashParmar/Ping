@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:assets_audio_player/assets_audio_player.dart';
 
 import 'menuwidget.dart';
 import 'conversationbarwidget.dart';
@@ -6,10 +7,17 @@ import 'conversationdetailscreen.dart';
 import 'callscreen.dart';
 
 class Msg {
-  String msg;
+  dynamic msg;
   String date;
   String type;
-  Msg(this.msg, this.date, this.type);
+  String format;
+  String path;
+  Msg(
+      {required this.msg,
+      required this.date,
+      required this.type,
+      required this.format,
+      required this.path});
 }
 
 class ConversationScreen extends StatefulWidget {
@@ -20,12 +28,43 @@ class ConversationScreen extends StatefulWidget {
 }
 
 class _ConversationScreenState extends State<ConversationScreen> {
+  final AssetsAudioPlayer player = AssetsAudioPlayer();
   List<Msg> txt = [];
 
-  void update(String msg, String date) {
+  void play(String path) {
+    player.open(Audio.file(path));
+  }
+
+  Widget msgUI(Msg txt) {
+    if (txt.format == 'txt') {
+      return Text(txt.msg);
+    } /**else if (txt.format == 'image') {
+    } **/
+    else if (txt.format == 'audio') {
+      var pause = true;
+      return Row(mainAxisSize: MainAxisSize.min, children: [
+        IconButton(
+          icon: const Icon(Icons.play_arrow),
+          onPressed: () {
+            setState(() {
+              pause = !pause;
+              play(txt.path);
+            });
+          },
+        )
+      ]);
+    }
+    /**else if (txt.format == 'video') {
+    } else if (txt.format == 'file') {}**/
+    return const Text('error');
+  }
+
+  void update(String msg, String date, String format, String path) {
     setState(() {
-      txt.add(Msg(msg, date, "Sender"));
-      txt.add(Msg(msg, date, "Reciver"));
+      txt.add(Msg(
+          msg: msg, date: date, type: "Sender", format: format, path: path));
+      txt.add(Msg(
+          msg: msg, date: date, type: "Reciver", format: format, path: path));
     });
   }
 
@@ -124,7 +163,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
                               ? SizedBox(width: sp * 0.01)
                               : const Padding(padding: EdgeInsets.zero),
                           Container(
-                            constraints: BoxConstraints(maxWidth: sp * 0.6),
+                            constraints: BoxConstraints(maxWidth: sp * 0.30),
                             padding: EdgeInsets.all(sp * 0.013),
                             decoration: BoxDecoration(
                               boxShadow: [
@@ -136,7 +175,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
                               borderRadius: BorderRadius.circular(sp * 0.02),
                               color: Theme.of(context).backgroundColor,
                             ),
-                            child: Text(txt[i].msg),
+                            child: msgUI(txt[i]),
                           ),
                           txt[i].type != 'Sender'
                               ? SizedBox(width: sp * 0.01)
