@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:assets_audio_player/assets_audio_player.dart';
+import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 
 import 'menuwidget.dart';
 import 'conversationbarwidget.dart';
@@ -12,12 +13,15 @@ class Msg {
   String type;
   String format;
   String path;
-  Msg(
-      {required this.msg,
-      required this.date,
-      required this.type,
-      required this.format,
-      required this.path});
+  bool play;
+  Msg({
+    required this.msg,
+    required this.date,
+    required this.type,
+    required this.format,
+    required this.path,
+    required this.play,
+  });
 }
 
 class ConversationScreen extends StatefulWidget {
@@ -41,18 +45,29 @@ class _ConversationScreenState extends State<ConversationScreen> {
     } /**else if (txt.format == 'image') {
     } **/
     else if (txt.format == 'audio') {
-      var pause = true;
-      return Row(mainAxisSize: MainAxisSize.min, children: [
-        IconButton(
-          icon: const Icon(Icons.play_arrow),
-          onPressed: () {
-            setState(() {
-              pause = !pause;
-              play(txt.path);
-            });
-          },
-        )
-      ]);
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Expanded(
+            child: GestureDetector(
+              child: Icon(txt.play ? Icons.pause : Icons.play_arrow),
+              onTap: () {
+                setState(() {
+                  txt.play ? player.pause() : play(txt.path);
+                  txt.play = !txt.play;
+                });
+              },
+            ),
+          ),
+          const Expanded(
+            flex: 4,
+            child: ProgressBar(
+              progress: Duration(seconds: 0),
+              total: Duration(seconds: 0),
+            ),
+          ),
+        ],
+      );
     }
     /**else if (txt.format == 'video') {
     } else if (txt.format == 'file') {}**/
@@ -61,10 +76,26 @@ class _ConversationScreenState extends State<ConversationScreen> {
 
   void update(String msg, String date, String format, String path) {
     setState(() {
-      txt.add(Msg(
-          msg: msg, date: date, type: "Sender", format: format, path: path));
-      txt.add(Msg(
-          msg: msg, date: date, type: "Reciver", format: format, path: path));
+      txt.add(
+        Msg(
+          msg: msg,
+          date: date,
+          type: "Sender",
+          format: format,
+          path: path,
+          play: false,
+        ),
+      );
+      txt.add(
+        Msg(
+          msg: msg,
+          date: date,
+          type: "Reciver",
+          format: format,
+          path: path,
+          play: false,
+        ),
+      );
     });
   }
 

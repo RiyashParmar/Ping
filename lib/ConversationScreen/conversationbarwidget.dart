@@ -13,6 +13,7 @@ import 'package:location/location.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
+import 'package:animated_text_kit/animated_text_kit.dart';
 
 class ConversationBar extends StatefulWidget {
   ConversationBar({Key? key, this.update}) : super(key: key);
@@ -136,6 +137,20 @@ class _ConversationState extends State<ConversationBar> {
                   ),
                   Expanded(
                     child: Text('$mt$mo:$st$so'),
+                  ),
+                  Expanded(
+                    flex: 4,
+                    child: Row(
+                      children: [
+                        AnimatedTextKit(
+                          repeatForever: true,
+                          animatedTexts: [
+                            WavyAnimatedText('      Recording...',
+                                textStyle: TextStyle(fontSize: sp * 0.03)),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                   Expanded(
                     child: IconButton(
