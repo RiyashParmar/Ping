@@ -45,28 +45,8 @@ class _ConversationScreenState extends State<ConversationScreen> {
     } /**else if (txt.format == 'image') {
     } **/
     else if (txt.format == 'audio') {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Expanded(
-            child: GestureDetector(
-              child: Icon(txt.play ? Icons.pause : Icons.play_arrow),
-              onTap: () {
-                setState(() {
-                  txt.play ? player.pause() : play(txt.path);
-                  txt.play = !txt.play;
-                });
-              },
-            ),
-          ),
-          const Expanded(
-            flex: 4,
-            child: ProgressBar(
-              progress: Duration(seconds: 0),
-              total: Duration(seconds: 0),
-            ),
-          ),
-        ],
+      return GestureDetector(
+        child: const Icon(Icons.audiotrack),
       );
     }
     /**else if (txt.format == 'video') {
