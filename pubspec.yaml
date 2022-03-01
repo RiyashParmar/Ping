@@ -3,7 +3,7 @@ description: A new Flutter project.
 
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
 # The following defines the version and build number for your application.
 # A version number is three numbers separated by dots, like 1.2.43
@@ -53,6 +53,8 @@ dependencies:
   audio_video_progress_bar: ^0.10.0
   intl_phone_field: ^3.0.1
   image_picker: ^0.8.4+9
+  flutter_typeahead: ^3.2.4
+  google_ml_kit: ^0.7.3
 
 flutter_icons:
   android: "launcher_icon"
@@ -63,7 +65,7 @@ flutter_native_splash:
   color: "#ffffff"
   image: assets/PING.png
   color_dark: "#1a1a1a"
-  image_dark : assets/PING.png
+  image_dark: assets/PING.png
   ios: false
 
 dev_dependencies:
@@ -82,7 +84,6 @@ dev_dependencies:
 
 # The following section is specific to Flutter.
 flutter:
-
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.

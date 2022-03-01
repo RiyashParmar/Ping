@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -5,8 +6,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:google_ml_kit/google_ml_kit.dart';
 
 import '../HomeScreen/homescreen.dart';
+
+String ip = 'http://192.168.43.62:3000';
+//String ip = 'http://10.0.2.2:3000';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
@@ -27,22 +32,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String code = '91';
   var dp = null;
 
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: date,
-      firstDate: DateTime(1903, 1, 1),
-      lastDate: date,
-    );
-    if (picked != null && picked != date) {
-      setState(() {
-        date = picked;
-      });
-    }
-  }
-
   Future<int> _confirmNumber() async {
-    var url = Uri.parse('http://10.0.2.2:3000/register/sendOtp');
+    var url = Uri.parse(ip + '/register/sendOtp');
     var response = await http.post(
       url,
       body: {'number': '+' + code + _controller2.text},
@@ -159,7 +150,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             onTap: () async {
                               final picker = ImagePicker();
                               dp = await picker.pickImage(
-                                  source: ImageSource.gallery);
+                                  source: ImageSource.gallery) as XFile;
                               setState(() {
                                 _controller1.text = dp != null ? dp.path : '';
                               });
@@ -293,7 +284,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             child: const Text('Submit'),
                             onPressed: () async {
                               if (_formKey.currentState!.validate()) {
-                                if (await _confirmNumber() == 200) {
+                                var res = await _confirmNumber();
+                                if (res == 200) {
                                   Navigator.of(context).push(
                                     MaterialPageRoute(
                                       builder: (ctx) => ConfirmId(
@@ -304,7 +296,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       ),
                                     ),
                                   );
-                                } else {
+                                } else if (res == 404)  {
+                                  ScaffoldMessenger.of(context)
+                                      .clearSnackBars();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      duration: Duration(seconds: 5),
+                                      content: Text(
+                                        'Number already registered.',
+                                      ),
+                                    ),
+                                  );
+                                }else {
+                                  ScaffoldMessenger.of(context)
+                                      .clearSnackBars();
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
                                       duration: Duration(seconds: 5),
@@ -362,16 +367,14 @@ class ConfirmIdstate extends State<ConfirmId> {
   late final TextEditingController _controller2;
   late final TextEditingController _controller3;
 
-  bool otp = false;
-  String userState = '';
-  String keyState = '';
-
   final _formKey = GlobalKey<FormState>();
-  final _formFieldKey1 = GlobalKey<FormFieldState>();
-  final _formFieldKey2 = GlobalKey<FormFieldState>();
+
+  bool otp = false;
+  bool username = false;
+  bool loginkey = false;
 
   Future<int> _confirmOtp() async {
-    var url = Uri.parse('http://10.0.2.2:3000/register/confirmOtp');
+    var url = Uri.parse(ip + '/register/confirmOtp');
     var response = await http.post(
       url,
       body: {'otp': _controller1.text, 'number': widget.number},
@@ -379,22 +382,43 @@ class ConfirmIdstate extends State<ConfirmId> {
     return response.statusCode;
   }
 
-  Future<int> _checkUsername() async {
-    var url = Uri.parse('http://10.0.2.2:3000/register/checkUsername');
+  Future<http.Response> _checkUsername() async {
+    var url = Uri.parse(ip + '/register/checkUsername');
     var response = await http.post(
       url,
       body: {'username': _controller2.text},
     );
-    return response.statusCode;
+    return response;
   }
 
-  Future<int> _checkLoginkey() async {
-    var url = Uri.parse('http://10.0.2.2:3000/register/checkLoginkey');
+  Future<http.Response> _checkLoginkey() async {
+    var url = Uri.parse(ip + '/register/checkLoginkey');
     var response = await http.post(
       url,
       body: {'loginkey': _controller3.text},
     );
-    return response.statusCode;
+    return response;
+  }
+
+  Future<http.Response> _registerUser() async {
+    File image = File(widget.dp);
+    List<int> imageBytes = image.readAsBytesSync();
+    String dp = base64.encode(imageBytes);
+
+    var url = Uri.parse(ip + '/register/registerNewUser');
+    var response = await http.post(
+      url,
+      body: {
+        '_id': _controller3.text,
+        'name': widget.name,
+        'username': _controller2.text,
+        'number': widget.number,
+        'face_struct': 'nan',
+        'dp': dp,
+        'bio': widget.bio,
+      },
+    );
+    return response;
   }
 
   @override
@@ -485,14 +509,8 @@ class ConfirmIdstate extends State<ConfirmId> {
                                   left: sp * 0.01,
                                 ),
                                 child: TextFormField(
-                                  key: _formFieldKey1,
                                   controller: _controller2,
                                   decoration: InputDecoration(
-                                    suffix: userState == 'loading'
-                                        ? const CircularProgressIndicator()
-                                        : userState == 'ok'
-                                            ? const Icon(Icons.check_box)
-                                            : const Icon(Icons.cancel),
                                     enabledBorder: UnderlineInputBorder(
                                       borderSide: BorderSide(
                                         color: Theme.of(context).iconTheme.color
@@ -507,39 +525,9 @@ class ConfirmIdstate extends State<ConfirmId> {
                                           .color,
                                     ),
                                   ),
-                                  onChanged: (value) async {
-                                    if (_formFieldKey1.currentState!
-                                        .validate()) {
-                                      setState(() {
-                                        userState = 'loading';
-                                      });
-                                      var res = await _checkUsername();
-                                      if (res == 305) {
-                                        setState(() {
-                                          userState = 'not ok';
-                                        });
-                                      } else if (res == 200) {
-                                        setState(() {
-                                          userState = 'ok';
-                                        });
-                                      } else {
-                                        ScaffoldMessenger.of(context)
-                                            .clearSnackBars();
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            duration: Duration(seconds: 5),
-                                            content: Text(
-                                              'Something went wrong! please type again',
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                    }
-                                  },
                                   validator: (value) {
                                     var reg = RegExp(
-                                        r'^[a-zA-Z0-9+_]+[a-zA-Z0-9+_+\-+.]*[^\s]\1*[a-zA-Z0-9+_]$');
+                                        r'^[a-z0-9+_]+[a-z0-9+_+\-+.]*[^\s]\1*[a-z0-9+_]+$');
                                     if (value!.trim().length < 3) {
                                       return 'Too short!! Be more cool 😎';
                                     } else if (value.trim().length > 30) {
@@ -548,6 +536,13 @@ class ConfirmIdstate extends State<ConfirmId> {
                                       return 'Invalid format! Might as well follow the instructions 😏';
                                     } else {
                                       return null;
+                                    }
+                                  },
+                                  onChanged: (value) {
+                                    if (username) {
+                                      setState(() {
+                                        username = false;
+                                      });
                                     }
                                   },
                                 ),
@@ -561,11 +556,11 @@ class ConfirmIdstate extends State<ConfirmId> {
                                   left: sp * 0.01,
                                 ),
                                 child: const Text(
-                                  'Should be a 3-30 characters combination of Alphanumeric, Symbols( _ , - , . ) with no whitespaces and should start with Alphanumeric or Underscore',
+                                  'Should be a 3-30 characters combination of lowercase Alphanumeric, Symbols( _ , - , . ) with no whitespaces and should start with Alphanumeric or Underscore',
                                 ),
                               )
                             : const Padding(padding: EdgeInsets.zero),
-                        otp
+                        username
                             ? Padding(
                                 padding: EdgeInsets.only(
                                   top: sp * 0.01,
@@ -573,10 +568,8 @@ class ConfirmIdstate extends State<ConfirmId> {
                                   left: sp * 0.01,
                                 ),
                                 child: TextFormField(
-                                  key: _formFieldKey2,
                                   controller: _controller3,
                                   decoration: InputDecoration(
-                                    suffix: keyState == 'loading' ? const CircularProgressIndicator() : null,
                                     enabledBorder: UnderlineInputBorder(
                                       borderSide: BorderSide(
                                         color: Theme.of(context).iconTheme.color
@@ -591,49 +584,32 @@ class ConfirmIdstate extends State<ConfirmId> {
                                           .color,
                                     ),
                                   ),
-                                  onChanged: (value) async {
-                                    if (_formFieldKey2.currentState!
-                                        .validate()) {
-                                      setState(() {
-                                        keyState = 'loading';
-                                      });
-                                      var res = await _checkLoginkey();
-                                      if (res == 300) {
-                                        setState(() {
-                                          keyState = '';
-                                        });
-                                        //show suggestions....
+                                  validator: (value) {
+                                    if (!loginkey) {
+                                      var reg = RegExp(r'^[a-z]+$');
+                                      if (value!.trim().length < 8) {
+                                        return 'Too short!! Not very strong you see 😏';
+                                      } else if (value.trim().length > 200) {
+                                        return 'Too Long!! Bet you will forget these 😂';
+                                      } else if (!reg.hasMatch(value.trim())) {
+                                        return 'Invalid format! Might as well follow the instructions 😏';
                                       } else {
-                                        ScaffoldMessenger.of(context)
-                                            .clearSnackBars();
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            duration: Duration(seconds: 5),
-                                            content: Text(
-                                              'Something went wrong! please type again',
-                                            ),
-                                          ),
-                                        );
+                                        return null;
                                       }
                                     }
+                                    return null;
                                   },
-                                  validator: (value) {
-                                    var reg = RegExp(r'[a-zA-Z]$');
-                                    if (value!.trim().length < 8) {
-                                      return 'Too short!! Not very strong you see 😏';
-                                    } else if (value.trim().length > 200) {
-                                      return 'Too Long!! Bet you will forget these 😂';
-                                    } else if (!reg.hasMatch(value.trim())) {
-                                      return 'Invalid format! Might as well follow the instructions 😏';
-                                    } else {
-                                      return null;
+                                  onChanged: (value) {
+                                    if (loginkey) {
+                                      setState(() {
+                                        loginkey = false;
+                                      });
                                     }
                                   },
                                 ),
                               )
                             : const Padding(padding: EdgeInsets.zero),
-                        otp
+                        username
                             ? Padding(
                                 padding: EdgeInsets.only(
                                   top: sp * 0.01,
@@ -641,7 +617,7 @@ class ConfirmIdstate extends State<ConfirmId> {
                                   left: sp * 0.01,
                                 ),
                                 child: const Text(
-                                  'Enter a sentence of atleast 8 characters (Only Alphabets without any space in between) and we will give you suggestions pick one from them.',
+                                  'Enter a sentence of atleast 8 characters (Only lowercase alphabets without any space in between) and we will give you suggestions pick one from them.',
                                 ),
                               )
                             : const Padding(padding: EdgeInsets.zero),
@@ -655,16 +631,48 @@ class ConfirmIdstate extends State<ConfirmId> {
                           child: ElevatedButton(
                             child: const Text('Submit'),
                             onPressed: () async {
-                              if (otp) {
+                              if (otp && username && loginkey) {
                                 if (_formKey.currentState!.validate()) {
-                                  Navigator.of(context)
-                                      .pushNamed(HomeScreen.routename);
+                                  var res = await _registerUser();
+                                  if (res.statusCode == 200) {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: ((context) {
+                                          return const FaceAuth();
+                                        }),
+                                      ),
+                                    );
+                                  } else {
+                                    Navigator.of(context).pop();
+                                    ScaffoldMessenger.of(context)
+                                        .clearSnackBars();
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        duration: Duration(seconds: 5),
+                                        content: Text(
+                                          'Something went wrong please try again.',
+                                        ),
+                                      ),
+                                    );
+                                  }
                                 }
-                              } else {
-                                if (await _confirmOtp() == 200) {
+                              } else if (!otp) {
+                                var res = await _confirmOtp();
+                                if (res == 200) {
                                   setState(() {
                                     otp = true;
                                   });
+                                } else if (res == 404) {
+                                  ScaffoldMessenger.of(context)
+                                      .clearSnackBars();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      duration: Duration(seconds: 5),
+                                      content: Text(
+                                        'Inncorrect otp please try again.',
+                                      ),
+                                    ),
+                                  );
                                 } else {
                                   ScaffoldMessenger.of(context)
                                       .clearSnackBars();
@@ -672,10 +680,94 @@ class ConfirmIdstate extends State<ConfirmId> {
                                     const SnackBar(
                                       duration: Duration(seconds: 5),
                                       content: Text(
-                                        'Inncorrect otp please try again',
+                                        'Something went wrong please try again!',
                                       ),
                                     ),
                                   );
+                                }
+                              } else if (!username) {
+                                if (_formKey.currentState!.validate()) {
+                                  var res = await _checkUsername();
+                                  if (res.statusCode == 200) {
+                                    setState(() {
+                                      username = true;
+                                    });
+                                  } else if (res.statusCode == 404) {
+                                    var suggestions =
+                                        json.decode(res.body)["suggestions"]
+                                            as List;
+                                    showModalBottomSheet(
+                                      context: context,
+                                      builder: (context) {
+                                        return ListView.builder(
+                                            itemCount: suggestions.length,
+                                            itemBuilder: (context, i) {
+                                              return ListTile(
+                                                title: Text(suggestions[i]),
+                                                onTap: () {
+                                                  setState(() {
+                                                    _controller2.text =
+                                                        suggestions[i];
+                                                    username = true;
+                                                  });
+                                                  Navigator.of(context).pop();
+                                                },
+                                              );
+                                            });
+                                      },
+                                    );
+                                  } else {
+                                    ScaffoldMessenger.of(context)
+                                        .clearSnackBars();
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        duration: Duration(seconds: 5),
+                                        content: Text(
+                                          'Something went wrong please type again!!',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                }
+                              } else {
+                                if (_formKey.currentState!.validate()) {
+                                  var res = await _checkLoginkey();
+                                  if (res.statusCode == 200) {
+                                    var suggestions =
+                                        json.decode(res.body)["suggestions"]
+                                            as List;
+                                    showModalBottomSheet(
+                                      context: context,
+                                      builder: (context) {
+                                        return ListView.builder(
+                                            itemCount: suggestions.length,
+                                            itemBuilder: (context, i) {
+                                              return ListTile(
+                                                title: Text(suggestions[i]),
+                                                onTap: () {
+                                                  setState(() {
+                                                    _controller3.text =
+                                                        suggestions[i];
+                                                    loginkey = true;
+                                                  });
+                                                  Navigator.of(context).pop();
+                                                },
+                                              );
+                                            });
+                                      },
+                                    );
+                                  } else {
+                                    ScaffoldMessenger.of(context)
+                                        .clearSnackBars();
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        duration: Duration(seconds: 5),
+                                        content: Text(
+                                          'Something went wrong please type again!!',
+                                        ),
+                                      ),
+                                    );
+                                  }
                                 }
                               }
                             },
@@ -683,6 +775,111 @@ class ConfirmIdstate extends State<ConfirmId> {
                         ),
                       ],
                     ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class FaceAuth extends StatefulWidget {
+  const FaceAuth({Key? key}) : super(key: key);
+  @override
+  _FaceAuthState createState() => _FaceAuthState();
+}
+
+class _FaceAuthState extends State<FaceAuth> {
+  bool faceid = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final MediaQueryData media = MediaQuery.of(context);
+    final double sp = media.size.height > media.size.width
+        ? media.size.height
+        : media.size.width;
+    return Scaffold(
+      body: Center(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Padding(
+                padding: EdgeInsets.all(sp * 0.01),
+                child: Text(
+                  'PING',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: sp * 0.05,
+                  ),
+                ),
+              ),
+              Container(
+                //height: ,
+                width: sp * 0.4,
+                decoration: BoxDecoration(
+                  border: Border.all(width: sp * 0.001),
+                  borderRadius: BorderRadius.circular(
+                    sp * 0.02,
+                  ),
+                  boxShadow: const [BoxShadow(color: Colors.grey)],
+                  color: Theme.of(context).backgroundColor,
+                ),
+                child: Center(
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.only(
+                          top: sp * 0.02,
+                          right: sp * 0.01,
+                          left: sp * 0.01,
+                        ),
+                        child: const Text(
+                            'Register FaceId as 2-Factor-Authentication'),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.only(
+                          top: sp * 0.03,
+                        ),
+                        child: GestureDetector(
+                          child: faceid
+                              ? CircleAvatar(
+                                  child: Icon(
+                                    Icons.check,
+                                    size: sp * 0.09,
+                                  ),
+                                  radius: sp * 0.09,
+                                )
+                              : CircleAvatar(
+                                  child: Icon(
+                                    Icons.face,
+                                    size: sp * 0.09,
+                                  ),
+                                  radius: sp * 0.09,
+                                ),
+                          onTap: () async {},
+                        ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.only(
+                          top: sp * 0.01,
+                          right: sp * 0.01,
+                          left: sp * 0.01,
+                          bottom: sp * 0.01,
+                        ),
+                        child: ElevatedButton(
+                          child:
+                              faceid ? const Text('DONE') : const Text('SKIP'),
+                          onPressed: () {
+                            Navigator.of(context)
+                                .pushNamed(HomeScreen.routename);
+                          },
+                        ),
+                      )
+                    ],
                   ),
                 ),
               ),
