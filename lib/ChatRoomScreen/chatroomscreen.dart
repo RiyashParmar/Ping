@@ -1,27 +1,24 @@
-// ignore_for_file: prefer_typing_uninitialized_variables
-
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:provider/provider.dart';
 
-import '../models/user.dart';
+import '../models/chatroom.dart';
 import '../models/mydata.dart';
 
-import 'menuwidget.dart';
+import 'chatroomdetailscreen.dart';
 import 'conversationbarwidget.dart';
-import 'conversationdetailscreen.dart';
-import 'callscreen.dart';
+import 'menuwidget.dart';
 
-class ConversationScreen extends StatefulWidget {
-  const ConversationScreen({Key? key}) : super(key: key);
-  static const routeName = '/Conversation';
+class ChatRoomScreen extends StatefulWidget {
+  const ChatRoomScreen({Key? key}) : super(key: key);
+  static const routeName = '/ChatRoom';
   @override
-  State<ConversationScreen> createState() => _ConversationScreenState();
+  State<ChatRoomScreen> createState() => _ChatRoomScreenState();
 }
 
-class _ConversationScreenState extends State<ConversationScreen> {
+class _ChatRoomScreenState extends State<ChatRoomScreen> {
   final AssetsAudioPlayer player = AssetsAudioPlayer();
   String image = '';
 
@@ -58,14 +55,15 @@ class _ConversationScreenState extends State<ConversationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final pr = Provider.of<Users>(context);
+    final pr = Provider.of<ChatRooms>(context);
     final my = Provider.of<My>(context);
-    final User user = ModalRoute.of(context)!.settings.arguments as User;
+    final ChatRoom room =
+        ModalRoute.of(context)!.settings.arguments as ChatRoom;
     final MediaQueryData media = MediaQuery.of(context);
     final double sp = media.size.height > media.size.width
         ? media.size.height
         : media.size.width;
-    final List<String> convo = pr.getMsg(user.id);
+    final List<String> convo = pr.getMsg(room.id);
     image = my.bgImg;
 
     final appBar = AppBar(
@@ -74,11 +72,11 @@ class _ConversationScreenState extends State<ConversationScreen> {
         children: [
           GestureDetector(
             onTap: () => Navigator.of(context)
-                .pushNamed(ConversationDetailScreen.routeName, arguments: user),
+                .pushNamed(ChatRoomDetailScreen.routeName, arguments: room),
             child: Row(
               children: [
                 CircleAvatar(
-                  backgroundImage: FileImage(File(user.dp)),
+                  backgroundImage: FileImage(File(room.dp)),
                 ),
                 SizedBox(
                   width: sp * 0.01,
@@ -86,7 +84,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
                 SizedBox(
                   width: sp * 0.15,
                   child: Text(
-                    user.name,
+                    room.name,
                     maxLines: 1,
                   ),
                 ),
@@ -96,23 +94,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
         ],
       ),
       actions: [
-        IconButton(
-          icon: const Icon(Icons.call),
-          onPressed: () => Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (ctx) => CallScreen(user: user.name),
-            ),
-          ),
-        ),
-        /*IconButton(
-          icon: const Icon(Icons.videocam),
-          onPressed: () => Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (ctx) => CallScreen(user: user.name),
-            ),
-          ),
-        ),*/
-        Menu(user: user.name, my: my, change: change),
+        Menu(grp: room, room: pr, my: my, change: change, update: update),
       ],
     );
 
@@ -200,7 +182,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
                     },
                   ),
                 ),
-                ConversationBar(us: user, update: update),
+                ConversationBar(us: room, update: update),
               ],
             ),
           ),

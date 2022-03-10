@@ -1,14 +1,18 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
-import 'package:intl_phone_field/phone_number.dart';
+
+import '../HomeScreen/homescreen.dart';
+import '../models/chatroom.dart';
+import '../models/mydata.dart';
+import '../main.dart';
 
 import 'registerscreen.dart';
-import '../HomeScreen/homescreen.dart';
 
 String ip = 'http://192.168.43.62:3000';
 //String ip = 'http://10.0.2.2:3000';
@@ -21,14 +25,15 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _controller1 = TextEditingController();
-  final TextEditingController _controller2 = TextEditingController();
+  late final TextEditingController _controller1;
+  late final TextEditingController _controller2;
 
   bool _validate = true;
   String code = '91';
 
   Future<void> _requestPermission() async {
     await [
+      Permission.notification,
       Permission.locationWhenInUse,
       Permission.microphone,
       Permission.contacts,
@@ -36,16 +41,30 @@ class _LoginScreenState extends State<LoginScreen> {
     ].request();
   }
 
-  Future<int> _loginAuth() async {
+  Future<http.Response> _loginAuth() async {
     var url = Uri.parse(ip + '/login');
     var response = await http.post(
       url,
       body: {
-        'loginkey': _controller1.text,
-        'number': '+' + code + _controller2.text
+        'loginkey': _controller1.text.trim(),
+        'number': '+' + code + _controller2.text.trim(),
       },
     );
-    return response.statusCode;
+    return response;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _controller1 = TextEditingController();
+    _controller2 = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _controller1.dispose();
+    _controller2.dispose();
   }
 
   @override
@@ -88,6 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           left: sp * 0.01,
                         ),
                         child: TextFormField(
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
                           controller: _controller1,
                           decoration: InputDecoration(
                             enabledBorder: UnderlineInputBorder(
@@ -104,12 +124,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             errorText: _validate ? null : 'Invalid',
                           ),
                           validator: (value) {
-                            var reg = RegExp(r'^[a-z]+$');
                             if (value!.trim().length < 8) {
                               return 'Invalid format!';
                             } else if (value.trim().length > 200) {
-                              return 'Invalid format!';
-                            } else if (!reg.hasMatch(value.trim())) {
                               return 'Invalid format!';
                             } else {
                               return null;
@@ -126,6 +143,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: IntlPhoneField(
                           controller: _controller2,
                           initialCountryCode: 'IN',
+                          autovalidateMode: AutovalidateMode.always,
                           keyboardType: TextInputType.phone,
                           decoration: InputDecoration(
                             enabledBorder: UnderlineInputBorder(
@@ -159,25 +177,65 @@ class _LoginScreenState extends State<LoginScreen> {
                             _validate = true;
                           });
                           var res = await _loginAuth();
-                          if (res == 200) {
+                          if (res.statusCode == 200) {
+                            //var key = await SharedPreferences.getInstance();
+                            //key.setBool('Login', true);
+                            var user = json.decode(res.body)['data'];
+                            for (var item in user['chatrooms']) {
+                              var buffer = base64.decode(item['dp']);
+                              final dir = await getExternalStorageDirectory();
+                              final image =
+                                  File(dir!.path + '/' + item['_id'] + '.jpg');
+                              image.writeAsBytesSync(buffer);
+
+                              List<String> members = [];
+                              for (var i in item['members']) {
+                                members.add(i.toString());
+                              }
+
+                              ChatRoom room = ChatRoom(
+                                id_: item['_id'],
+                                name: item['name'],
+                                type: item['type'],
+                                dp: dir.path + '/' + item['_id'] + '.jpg',
+                                description: item['description'],
+                                members: members,
+                                msgs: [],
+                              );
+                              db.chatroomTb.put(room);
+                            }
+
+                            var buffer = base64.decode(user['dp']);
+                            final dir = await getExternalStorageDirectory();
+                            final image = File(dir!.path + '/dp.jpg');
+                            image.writeAsBytesSync(buffer);
+
+                            final mydata = MyData(
+                              username: user['username'],
+                              name: user['name'],
+                              number: user['number'],
+                              dp: dir.path + '/dp.jpg',
+                              bio: user['bio'],
+                              moments: [],
+                            );
+                            db.myTb.put(mydata);
                             await _requestPermission();
                             Navigator.of(context)
                                 .pushNamed(HomeScreen.routename);
-                          } else if (res == 404) {
+                          } else if (res.statusCode == 404) {
                             setState(() {
                               _validate = false;
                             });
                           } else {
-                            ScaffoldMessenger.of(context)
-                                      .clearSnackBars();
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      duration: Duration(seconds: 5),
-                                      content: Text(
-                                        'Something went wrong please try again.',
-                                      ),
-                                    ),
-                                  );
+                            ScaffoldMessenger.of(context).clearSnackBars();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                duration: Duration(seconds: 5),
+                                content: Text(
+                                  'Something went wrong please try again.',
+                                ),
+                              ),
+                            );
                           }
                         },
                         child: const Text('Login'),
@@ -237,20 +295,21 @@ class _RecoveryState extends State<Recovery> {
   String code = '91';
   bool otp = false;
   bool key = false;
+  bool done = false;
 
   Future<int> _confirmNumber() async {
     var url = Uri.parse(ip + '/login/confirmNumber');
     var response = await http.post(
       url,
       body: {
-        'number': '+' + code + _controller1.text,
-        'name': _controller2.text
+        'number': '+' + code + _controller1.text.trim(),
+        'name': _controller2.text.trim(),
       },
     );
     return response.statusCode;
   }
 
-  Future<http.Response> _confirmOtp() async {
+  Future<int> _confirmOtp() async {
     var url = Uri.parse(ip + '/login/confirmOtp');
     var response = await http.post(
       url,
@@ -259,7 +318,28 @@ class _RecoveryState extends State<Recovery> {
         'otp': _controller3.text,
       },
     );
+    return response.statusCode;
+  }
+
+  Future<http.Response> _checkLoginkey() async {
+    var url = Uri.parse(ip + '/register/checkLoginkey');
+    var response = await http.post(
+      url,
+      body: {'loginkey': _controller4.text},
+    );
     return response;
+  }
+
+  Future<int> _changeLoginkey() async {
+    var url = Uri.parse(ip + '/login/changeLoginkey');
+    var response = await http.post(
+      url,
+      body: {
+        'loginkey': _controller4.text,
+        'number': '+' + code + _controller1.text
+      },
+    );
+    return response.statusCode;
   }
 
   @override
@@ -362,6 +442,8 @@ class _RecoveryState extends State<Recovery> {
                             left: sp * 0.01,
                           ),
                           child: TextFormField(
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
                             controller: _controller2,
                             readOnly: otp,
                             decoration: InputDecoration(
@@ -401,6 +483,8 @@ class _RecoveryState extends State<Recovery> {
                                   left: sp * 0.01,
                                 ),
                                 child: TextFormField(
+                                  autovalidateMode:
+                                      AutovalidateMode.onUserInteraction,
                                   controller: _controller3,
                                   readOnly: key,
                                   decoration: InputDecoration(
@@ -431,13 +515,14 @@ class _RecoveryState extends State<Recovery> {
                         key
                             ? Padding(
                                 padding: EdgeInsets.only(
-                                  top: sp * 0.02,
+                                  top: sp * 0.01,
                                   right: sp * 0.01,
                                   left: sp * 0.01,
                                 ),
                                 child: TextFormField(
+                                  autovalidateMode:
+                                      AutovalidateMode.onUserInteraction,
                                   controller: _controller4,
-                                  readOnly: key,
                                   decoration: InputDecoration(
                                     enabledBorder: UnderlineInputBorder(
                                       borderSide: BorderSide(
@@ -453,6 +538,40 @@ class _RecoveryState extends State<Recovery> {
                                           .color,
                                     ),
                                   ),
+                                  validator: (value) {
+                                    if (!done) {
+                                      var reg = RegExp(r'^[a-z]+$');
+                                      if (value!.trim().length < 8) {
+                                        return 'Too short!! Not very strong you see 😏';
+                                      } else if (value.trim().length > 200) {
+                                        return 'Too Long!! Bet you will forget these 😂';
+                                      } else if (!reg.hasMatch(value.trim())) {
+                                        return 'Invalid format! Might as well follow the instructions 😏';
+                                      } else {
+                                        return null;
+                                      }
+                                    }
+                                    return null;
+                                  },
+                                  onChanged: (value) {
+                                    if (done) {
+                                      setState(() {
+                                        done = false;
+                                      });
+                                    }
+                                  },
+                                ),
+                              )
+                            : const Padding(padding: EdgeInsets.zero),
+                        key
+                            ? Padding(
+                                padding: EdgeInsets.only(
+                                  top: sp * 0.01,
+                                  right: sp * 0.01,
+                                  left: sp * 0.01,
+                                ),
+                                child: const Text(
+                                  'Enter a sentence of atleast 8 characters (Only lowercase alphabets without any space in between) and we will give you suggestions pick one from them.',
                                 ),
                               )
                             : const Padding(padding: EdgeInsets.zero),
@@ -462,13 +581,12 @@ class _RecoveryState extends State<Recovery> {
                             bottom: sp * 0.01,
                           ),
                           child: ElevatedButton(
-                            child: key
-                                ? const Text('COPY')
-                                : const Text('CONFIRM'),
+                            child: const Text('CONFIRM'),
                             onPressed: () async {
                               if (_formKey.currentState!.validate() &&
                                   !otp &&
-                                  !key) {
+                                  !key &&
+                                  !done) {
                                 var res = await _confirmNumber();
                                 if (res == 200) {
                                   setState(() {
@@ -499,26 +617,14 @@ class _RecoveryState extends State<Recovery> {
                                 }
                               } else if (_formKey.currentState!.validate() &&
                                   otp &&
-                                  !key) {
+                                  !key &&
+                                  !done) {
                                 var res = await _confirmOtp();
-                                if (res.statusCode == 200) {
-                                  var lk = json.decode(res.body)["loginkey"]
-                                      as String;
+                                if (res == 200) {
                                   setState(() {
                                     key = true;
-                                    _controller4.text = lk;
                                   });
-                                  ScaffoldMessenger.of(context)
-                                      .clearSnackBars();
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      duration: Duration(seconds: 5),
-                                      content: Text(
-                                        'Your login-key. Better not forget it now... 😑',
-                                      ),
-                                    ),
-                                  );
-                                } else if (res.statusCode == 404) {
+                                } else if (res == 404) {
                                   ScaffoldMessenger.of(context)
                                       .clearSnackBars();
                                   ScaffoldMessenger.of(context).showSnackBar(
@@ -541,19 +647,75 @@ class _RecoveryState extends State<Recovery> {
                                     ),
                                   );
                                 }
-                              } else {
-                                Clipboard.setData(
-                                    ClipboardData(text: _controller4.text));
-                                ScaffoldMessenger.of(context).clearSnackBars();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    duration: Duration(seconds: 5),
-                                    content: Text(
-                                      'Copied...',
+                              } else if (_formKey.currentState!.validate() &&
+                                  otp &&
+                                  key &&
+                                  !done) {
+                                var res = await _checkLoginkey();
+                                if (res.statusCode == 200) {
+                                  var suggestions = json
+                                      .decode(res.body)["suggestions"] as List;
+                                  showModalBottomSheet(
+                                    context: context,
+                                    builder: (context) {
+                                      return ListView.builder(
+                                        itemCount: suggestions.length,
+                                        itemBuilder: (context, i) {
+                                          return ListTile(
+                                            title: Text(suggestions[i]),
+                                            onTap: () {
+                                              setState(() {
+                                                _controller4.text =
+                                                    suggestions[i];
+                                                done = true;
+                                              });
+                                              Navigator.of(context).pop();
+                                            },
+                                          );
+                                        },
+                                      );
+                                    },
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context)
+                                      .clearSnackBars();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      duration: Duration(seconds: 5),
+                                      content: Text(
+                                        'Something went wrong please type again!!',
+                                      ),
                                     ),
-                                  ),
-                                );
-                                Navigator.of(context).pop();
+                                  );
+                                }
+                              } else if (_formKey.currentState!.validate() &&
+                                  otp &&
+                                  key &&
+                                  done) {
+                                if (await _changeLoginkey() == 200) {
+                                  ScaffoldMessenger.of(context)
+                                      .clearSnackBars();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      duration: Duration(seconds: 5),
+                                      content: Text(
+                                        'Login-key changed succesfully.',
+                                      ),
+                                    ),
+                                  );
+                                  Navigator.of(context).pop();
+                                } else {
+                                  ScaffoldMessenger.of(context)
+                                      .clearSnackBars();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      duration: Duration(seconds: 5),
+                                      content: Text(
+                                        'Something went wrong please type again!!',
+                                      ),
+                                    ),
+                                  );
+                                }
                               }
                             },
                           ),

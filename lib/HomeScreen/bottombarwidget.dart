@@ -4,12 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:share_plus/share_plus.dart';
 
-import 'searchscreen.dart';
+//import 'searchscreen.dart';
 import '../NewConversationScreen/newconversationscreen.dart';
 import '../SettingsScreen/settingsscreen.dart';
 import '../SettingsScreen/helpscreen.dart' as h;
 import '../NewBroadcastScreen/newbroadcastscreen.dart';
 import '../NewGroupScreen/newgroupscreen.dart';
+import '../WatchPartyScreen/watchpartyscreen.dart';
 
 class BottomBar extends StatefulWidget {
   const BottomBar({Key? key}) : super(key: key);
@@ -48,10 +49,11 @@ class _BottomBarState extends State<BottomBar> {
               flex: 2,
               child: IconButton(
                 onPressed: () {
-                  Navigator.of(context).pushNamed(Search.routeName);
+                  //Navigator.of(context).pushNamed(Search.routeName);
+                  Navigator.of(context).pushNamed(WatchPartyScreen.routeName);
                 },
                 icon: const Icon(
-                  Icons.search_sharp,
+                  Icons.play_circle,
                 ),
               ),
             ),
@@ -115,12 +117,12 @@ class _BottomBarState extends State<BottomBar> {
                             open = !open;
                             Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (ctx) => const h.Report(),
+                                builder: (ctx) => h.Report(),
                               ),
                             );
                           },
                         ),
-                        SpeedDialChild(
+                        /*SpeedDialChild(
                           backgroundColor: Theme.of(context).primaryColor,
                           labelBackgroundColor:
                               Theme.of(context).backgroundColor == Colors.black
@@ -135,6 +137,24 @@ class _BottomBarState extends State<BottomBar> {
                             Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder: (ctx) => const h.Guide(),
+                              ),
+                            );
+                          },
+                        ),*/
+                        SpeedDialChild(
+                          backgroundColor: Theme.of(context).primaryColor,
+                          labelBackgroundColor:
+                              Theme.of(context).backgroundColor == Colors.black
+                                  ? Colors.grey
+                                  : Colors.white,
+                          child: const Icon(
+                            Icons.feedback,
+                          ),
+                          label: 'Feedback',
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (ctx) => h.Feedback(),
                               ),
                             );
                           },
@@ -214,7 +234,7 @@ class Button extends StatelessWidget {
           onTap: () =>
               Navigator.of(context).pushNamed(NewGroupScreen.routeName),
         ),
-        SpeedDialChild(
+        /*SpeedDialChild(
           backgroundColor: Theme.of(context).primaryColor,
           labelBackgroundColor:
               Theme.of(context).backgroundColor == Colors.black
@@ -231,7 +251,7 @@ class Button extends StatelessWidget {
               ),
             );
           },
-        ),
+        ),*/
         SpeedDialChild(
           backgroundColor: Theme.of(context).primaryColor,
           labelBackgroundColor:

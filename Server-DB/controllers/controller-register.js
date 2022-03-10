@@ -1,9 +1,8 @@
-const otpGenerator = require('otp-generator')
 const fs = require('fs');
+const otpGenerator = require('otp-generator');
 
 const otp = require('../models/otp');
 const user = require('../models/user');
-
 
 exports.sendOtp = async (req, res, next) => {
     try {
@@ -66,12 +65,11 @@ exports.checkLoginkey = async (req, res, next) => {
         console.log(err);
         res.sendStatus(500);
     }
-
 }
 
 exports.registerNewUser = async (req, res, next) => {
     try {
-        var _id = req.body._id;
+        var loginkey = req.body.loginkey;
         var name = req.body.name;
         var username = req.body.username;
         var number = req.body.number;
@@ -80,9 +78,10 @@ exports.registerNewUser = async (req, res, next) => {
         var bio = req.body.bio;
 
         const buffer = Buffer.from(dp, "base64");
-        fs.writeFileSync('/Users/nik9/Documents/Server-DB/imgs/' + username + '.jpg', buffer);
+        dp = '/Users/nik9/Documents/projects/Ping/App/Android/ping/Server-DB/imgs/' + username + '.jpg';
+        fs.writeFileSync(dp, buffer);
 
-        const User = user({ _id: _id, name: name, username: username, face_struct: face_struct, number: number, dp: '/Users/nik9/Documents/Server-DB/imgs/' + username + '.jpg', bio: bio, chatrooms: [] });
+        const User = user({ name: name, username: username, number: number, loginkey: loginkey, face_struct: face_struct, dp: dp, bio: bio, chatrooms: [] });
         if (await User.save()) {
             res.sendStatus(200);
         } else {
@@ -154,7 +153,7 @@ async function _suggestLoginkey(seed) {
         var rand = Math.floor(Math.random() * diff);
         rand += min;
 
-        var symbols = ['`', '~', '!', '@', '#', '$', '%', '^', '&', '*', '-', '_', '\\', ';', ':', '/', '?'];
+        var symbols = ['!', '@', '#', '$', '%', '&', '*', '-', '_', '?'];
         var capPos = [];
         var result = input;
 
@@ -174,7 +173,7 @@ async function _suggestLoginkey(seed) {
 
     async function _dbCheck(key) {
         try {
-            if (await user.findOne({ _id: key }) != null) { // Todo - convert to binary search
+            if (await user.findOne({ loginkey: key }) != null) { // Todo - convert to binary search
                 return 1;
             } else {
                 return 0;

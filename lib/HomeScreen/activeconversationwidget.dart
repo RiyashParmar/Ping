@@ -1,20 +1,46 @@
-import 'package:flutter/material.dart';
-import '../ConversationScreen/conversationscreen.dart';
+import 'dart:io';
 
-class ActiveConversation extends StatelessWidget {
-  const ActiveConversation({Key? key, required this.users}) : super(key: key);
-  final List users;
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../ConversationScreen/conversationscreen.dart';
+import '../ChatRoomScreen/chatroomscreen.dart';
+
+import '../models/user.dart';
+import '../models/chatroom.dart';
+
+class ActiveConversation extends StatefulWidget {
+  const ActiveConversation({Key? key}) : super(key: key);
+  @override
+  State<ActiveConversation> createState() => _ActiveConversationState();
+}
+
+class _ActiveConversationState extends State<ActiveConversation> {
 
   @override
   Widget build(BuildContext context) {
+    final user = Provider.of<Users>(context);
+    final room = Provider.of<ChatRooms>(context);
     final MediaQueryData media = MediaQuery.of(context);
     final double sp = media.size.height > media.size.width
         ? media.size.height
         : media.size.width;
+    final List activeconvos = [];
+
+    for (var item in user.getUsers) {
+      if (item.msgs.isNotEmpty) {
+        activeconvos.add(item);
+      }
+    }
+
+    for (var item in room.getRooms) {
+      activeconvos.add(item);
+    }
+
     return SizedBox(
       height: media.size.height * 0.739,
       width: media.size.width,
-      child: users.isEmpty
+      child: activeconvos.isEmpty
           ? Center(
               child: Text(
                 'NO CONVERSATIONS',
@@ -29,25 +55,39 @@ class ActiveConversation extends StatelessWidget {
               itemBuilder: (context, i) {
                 return ListTile(
                   onTap: () {
-                    Navigator.of(context).pushNamed(
-                      ConversationScreen.routeName,
-                      arguments: [users[i].name, users[i].number],
-                    );
+                    activeconvos[i] is User
+                        ? Navigator.of(context).pushNamed(
+                            ConversationScreen.routeName,
+                            arguments: activeconvos[i],
+                          )
+                        : Navigator.of(context).pushNamed(
+                            ChatRoomScreen.routeName,
+                            arguments: activeconvos[i],
+                          );
                   },
-                  leading: const CircleAvatar(
-                    child: Icon(Icons.person),
+                  leading: CircleAvatar(
+                    backgroundImage: FileImage(File(activeconvos[i].dp)),
                   ),
                   title: Text(
-                    users[i].name,
+                    activeconvos[i].name,
                     maxLines: 1,
                   ),
+                  subtitle: Text(activeconvos[i].msgs.length - 1 >= 0
+                      ? activeconvos[i]
+                          .msgs[activeconvos[i].msgs.length - 1]
+                          .substring(16)
+                      : ''),
                   contentPadding: EdgeInsets.all(sp * 0.010),
                   trailing: Text(
-                    '${DateTime(2022, 1, 1)}',
+                    activeconvos[i].msgs.length - 1 >= 0
+                        ? activeconvos[i]
+                            .msgs[activeconvos[i].msgs.length - 1]
+                            .substring(2, 13)
+                        : '',
                   ),
                 );
               },
-              itemCount: users.length,
+              itemCount: activeconvos.length,
             ),
     );
   }

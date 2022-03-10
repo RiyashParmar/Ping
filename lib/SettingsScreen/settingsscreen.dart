@@ -1,23 +1,32 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:provider/provider.dart';
+
+import '../models/mydata.dart';
 
 import 'profilewidget.dart';
 import 'generalwidget.dart';
 import 'conversationwidget.dart';
 import 'notificationwidget.dart' as n;
-import 'helpscreen.dart';
-import 'aboutusscreen.dart';
+//import 'helpscreen.dart';
+//import 'aboutusscreen.dart';
 
+// ignore: must_be_immutable
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({Key? key}) : super(key: key);
   static const routeName = '/Settings';
+  // ignore: prefer_typing_uninitialized_variables
 
   @override
   Widget build(BuildContext context) {
+    final mydata = Provider.of<My>(context);
     final MediaQueryData media = MediaQuery.of(context);
     final double sp = media.size.height > media.size.width
         ? media.size.height
         : media.size.width;
+    final me = mydata.getMe;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
@@ -33,7 +42,7 @@ class SettingsScreen extends StatelessWidget {
               bottom: sp * 0.01,
             ),
             leading: CircleAvatar(
-              child: const Icon(Icons.person),
+              backgroundImage: FileImage(File(me.dp)),
               radius: sp * 0.04,
             ),
             title: Text(
@@ -122,7 +131,7 @@ class SettingsScreen extends StatelessWidget {
               );
             },
           ),
-          ListTile(
+          /*ListTile(
             contentPadding: EdgeInsets.only(
               top: sp * 0.01,
               left: sp * 0.05,
@@ -156,7 +165,7 @@ class SettingsScreen extends StatelessWidget {
             subtitle: const Text('Know your devs'),
             onTap: () =>
                 Navigator.of(context).pushNamed(AboutUsScreen.routeName),
-          ),
+          ),*/
           ListTile(
             contentPadding: EdgeInsets.only(
               top: sp * 0.01,

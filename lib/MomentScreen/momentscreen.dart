@@ -1,8 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import "package:story_view/story_view.dart";
 
 import '../ConversationScreen/conversationbarwidget.dart';
 import '../ConversationScreen/conversationdetailscreen.dart';
+
+import '../models/mydata.dart';
 
 class MomentScreen extends StatelessWidget {
   MomentScreen({Key? key}) : super(key: key);
@@ -11,7 +15,7 @@ class MomentScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final args = ModalRoute.of(context)!.settings.arguments as List;
+    final MyData user = ModalRoute.of(context)!.settings.arguments as MyData;
     final List<StoryItem> storyItems = [
       StoryItem.text(title: 'Hii', backgroundColor: Colors.black),
       StoryItem.pageImage(
@@ -33,16 +37,17 @@ class MomentScreen extends StatelessWidget {
         backgroundColor: Colors.black,
         title: GestureDetector(
           onTap: () => Navigator.of(context).pushNamed(
-              ConversationDetailScreen.routeName,
-              arguments: [args[0], args[1]]),
+            ConversationDetailScreen.routeName,
+            arguments: user,
+          ),
           child: Row(
             children: [
               CircleAvatar(
-                child: const Icon(Icons.person),
+                backgroundImage: FileImage(File(user.dp)),
                 radius: sp * 0.03,
               ),
               SizedBox(width: sp * 0.01),
-              Text('${args[0]}'),
+              Text(user.name),
             ],
           ),
         ),
@@ -101,11 +106,11 @@ class MomentScreen extends StatelessWidget {
             //onComplete: () => Navigator.of(context).pop(),
           ),
           Positioned(
-            bottom: sp * 0.01,
-            right: sp * 0.01,
-            left: sp * 0.01,
-            child: ConversationBar(),
-          ),
+              bottom: sp * 0.01,
+              right: sp * 0.01,
+              left: sp * 0.01,
+              child: const Text('ok') //ConversationBar(),
+              ),
         ],
       ),
     );

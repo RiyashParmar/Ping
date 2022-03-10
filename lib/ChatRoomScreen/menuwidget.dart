@@ -3,19 +3,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:ping/models/chatroom.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/mydata.dart';
 
-import 'shareddatascreen.dart';
-
 class Menu extends StatelessWidget {
-  const Menu(
-      {Key? key, required this.user, required this.my, required this.change})
-      : super(key: key);
-  final String user;
+  const Menu({
+    Key? key,
+    required this.grp,
+    required this.room,
+    required this.my,
+    required this.change,
+    required this.update,
+  }) : super(key: key);
+  final ChatRoom grp;
+  final ChatRooms room;
   final My my;
   final change;
+  final update;
 
   void bg() async {
     var key = await SharedPreferences.getInstance();
@@ -42,15 +48,22 @@ class Menu extends StatelessWidget {
     //print(result);
   }
 
+  void mute() {}
+
+  void clear() {
+    room.clearRoomMsg(grp);
+    update();
+  }
+
   @override
   Widget build(BuildContext context) {
-    void dialog(String a, String b) {
+    void dialog(String a, String b, void Function() work) {
       showDialog(
         context: context,
         builder: (context) {
           return AlertDialog(
-            title: Text('$a $user?!!'),
-            content: Text('$a User...'),
+            title: Text('$a ${grp.name}?!!'),
+            content: Text('$a chatroom'),
             actions: [
               TextButton(
                 onPressed: () {
@@ -60,6 +73,7 @@ class Menu extends StatelessWidget {
               ),
               TextButton(
                 onPressed: () {
+                  work();
                   Navigator.of(context).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -86,13 +100,19 @@ class Menu extends StatelessWidget {
           child: Text(
             'Report',
           ),
-        ),*/
+        ),
         const PopupMenuItem<int>(
           value: 1,
           child: Text(
             'Block',
           ),
         ),
+        const PopupMenuItem<int>(
+          value: 1,
+          child: Text(
+            'Clear msgs',
+          ),
+        ),*/
         const PopupMenuItem<int>(
           value: 2,
           child: Text(
@@ -121,20 +141,24 @@ class Menu extends StatelessWidget {
       onSelected: (int result) {
         switch (result) {
           case 0:
-            dialog('Report', 'Reported we will look into it');
+            //dialog('Report', 'Reported we will look into it');
             break;
           case 1:
-            dialog('Block', 'The User has been blocked');
+            dialog(
+              'Clear',
+              'Message has been cleared.',
+              clear,
+            );
             break;
           case 2:
-            dialog('Mute', 'The User has been Muted');
+            dialog('Mute', 'The User has been Muted', mute);
             break;
           case 3:
             _createShortcut();
             break;
           case 4:
-            Navigator.of(context)
-                .pushNamed(SharedDataScreen.routeName, arguments: user);
+            //Navigator.of(context)
+            //  .pushNamed(SharedDataScreen.routeName, arguments: user);
             break;
           case 5:
             bg();

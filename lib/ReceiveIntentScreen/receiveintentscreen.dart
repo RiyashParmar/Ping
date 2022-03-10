@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../Helpers/users.dart';
+import '../models/user.dart';
 
 class ReceiveIntentScreen extends StatefulWidget {
   const ReceiveIntentScreen({Key? key}) : super(key: key);
@@ -21,8 +21,9 @@ class _ReceiveIntentScreenState extends State<ReceiveIntentScreen> {
         ? media.size.height
         : media.size.width;
     final user = Provider.of<Users>(context);
-    user.getcontacts();
-    List<User> users = user.users;
+    user.init();
+    List<User> users = user.getUsers;
+
     final appBar = AppBar(
       title: const Text('Share'),
       actions: [

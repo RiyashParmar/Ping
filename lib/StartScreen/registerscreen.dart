@@ -2,12 +2,15 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+//import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
-import 'package:google_ml_kit/google_ml_kit.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:ping/models/mydata.dart';
+//import 'package:google_ml_kit/google_ml_kit.dart';
 
+import '../main.dart';
 import '../HomeScreen/homescreen.dart';
 
 String ip = 'http://192.168.43.62:3000';
@@ -30,13 +33,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   DateTime date = DateTime.now();
   String code = '91';
+  // ignore: avoid_init_to_null
   var dp = null;
 
   Future<int> _confirmNumber() async {
     var url = Uri.parse(ip + '/register/sendOtp');
     var response = await http.post(
       url,
-      body: {'number': '+' + code + _controller2.text},
+      body: {'number': '+' + code + _controller2.text.trim()},
     );
     return response.statusCode;
   }
@@ -104,6 +108,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             left: sp * 0.01,
                           ),
                           child: TextFormField(
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
                             controller: _controller1,
                             keyboardType: TextInputType.name,
                             readOnly: true,
@@ -148,12 +154,49 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     radius: sp * 0.09,
                                   ),
                             onTap: () async {
-                              final picker = ImagePicker();
-                              dp = await picker.pickImage(
-                                  source: ImageSource.gallery) as XFile;
-                              setState(() {
-                                _controller1.text = dp != null ? dp.path : '';
-                              });
+                              showModalBottomSheet(
+                                context: context,
+                                builder: (context) {
+                                  return BottomSheet(
+                                    onClosing: () {},
+                                    builder: (context) {
+                                      final picker = ImagePicker();
+                                      return Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          ListTile(
+                                            leading:
+                                                const Icon(Icons.camera_alt),
+                                            title: const Text('Take a picture'),
+                                            onTap: () async {
+                                              dp = await picker.pickImage(
+                                                  source: ImageSource.camera);
+                                              setState(() {
+                                                _controller1.text =
+                                                    dp != null ? dp.path : '';
+                                              });
+                                            },
+                                          ),
+                                          ListTile(
+                                            leading:
+                                                const Icon(Icons.library_add),
+                                            title:
+                                                const Text('Pick from gallery'),
+                                            onTap: () async {
+                                              dp = await picker.pickImage(
+                                                  source: ImageSource.gallery);
+                                              setState(() {
+                                                _controller1.text =
+                                                    dp != null ? dp.path : '';
+                                              });
+                                            },
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  );
+                                },
+                              );
                             },
                           ),
                         ),
@@ -200,6 +243,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             left: sp * 0.01,
                           ),
                           child: TextFormField(
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
                             controller: _controller3,
                             keyboardType: TextInputType.name,
                             decoration: InputDecoration(
@@ -246,6 +291,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             left: sp * 0.01,
                           ),
                           child: TextFormField(
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
                             controller: _controller4,
                             keyboardType: TextInputType.multiline,
                             maxLines: 5,
@@ -296,7 +343,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       ),
                                     ),
                                   );
-                                } else if (res == 404)  {
+                                } else if (res == 404) {
                                   ScaffoldMessenger.of(context)
                                       .clearSnackBars();
                                   ScaffoldMessenger.of(context).showSnackBar(
@@ -307,7 +354,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       ),
                                     ),
                                   );
-                                }else {
+                                } else {
                                   ScaffoldMessenger.of(context)
                                       .clearSnackBars();
                                   ScaffoldMessenger.of(context).showSnackBar(
@@ -323,16 +370,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             },
                           ),
                         ),
-
-                        /**
-                        TextButton(
-                          child: const Text('Submit'),
-                          onPressed: () async {
-                            var key = await SharedPreferences.getInstance();
-                            key.setBool('Login', true);
-                            
-                          },
-                        ),**/
                       ],
                     ),
                   ),
@@ -377,7 +414,7 @@ class ConfirmIdstate extends State<ConfirmId> {
     var url = Uri.parse(ip + '/register/confirmOtp');
     var response = await http.post(
       url,
-      body: {'otp': _controller1.text, 'number': widget.number},
+      body: {'otp': _controller1.text.trim(), 'number': widget.number.trim()},
     );
     return response.statusCode;
   }
@@ -386,7 +423,7 @@ class ConfirmIdstate extends State<ConfirmId> {
     var url = Uri.parse(ip + '/register/checkUsername');
     var response = await http.post(
       url,
-      body: {'username': _controller2.text},
+      body: {'username': _controller2.text.trim()},
     );
     return response;
   }
@@ -395,7 +432,7 @@ class ConfirmIdstate extends State<ConfirmId> {
     var url = Uri.parse(ip + '/register/checkLoginkey');
     var response = await http.post(
       url,
-      body: {'loginkey': _controller3.text},
+      body: {'loginkey': _controller3.text.trim()},
     );
     return response;
   }
@@ -409,16 +446,25 @@ class ConfirmIdstate extends State<ConfirmId> {
     var response = await http.post(
       url,
       body: {
-        '_id': _controller3.text,
-        'name': widget.name,
-        'username': _controller2.text,
-        'number': widget.number,
+        'loginkey': _controller3.text.trim(),
+        'name': widget.name.trim(),
+        'username': _controller2.text.trim(),
+        'number': widget.number.trim(),
         'face_struct': 'nan',
         'dp': dp,
-        'bio': widget.bio,
+        'bio': widget.bio.trim(),
       },
     );
     return response;
+  }
+
+  Future<void> _requestPermission() async {
+    await [
+      Permission.locationWhenInUse,
+      Permission.microphone,
+      Permission.contacts,
+      Permission.storage,
+    ].request();
   }
 
   @override
@@ -482,6 +528,8 @@ class ConfirmIdstate extends State<ConfirmId> {
                             left: sp * 0.01,
                           ),
                           child: TextFormField(
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
                             controller: _controller1,
                             readOnly: otp,
                             decoration: InputDecoration(
@@ -509,6 +557,8 @@ class ConfirmIdstate extends State<ConfirmId> {
                                   left: sp * 0.01,
                                 ),
                                 child: TextFormField(
+                                  autovalidateMode:
+                                      AutovalidateMode.onUserInteraction,
                                   controller: _controller2,
                                   decoration: InputDecoration(
                                     enabledBorder: UnderlineInputBorder(
@@ -568,6 +618,8 @@ class ConfirmIdstate extends State<ConfirmId> {
                                   left: sp * 0.01,
                                 ),
                                 child: TextFormField(
+                                  autovalidateMode:
+                                      AutovalidateMode.onUserInteraction,
                                   controller: _controller3,
                                   decoration: InputDecoration(
                                     enabledBorder: UnderlineInputBorder(
@@ -635,13 +687,27 @@ class ConfirmIdstate extends State<ConfirmId> {
                                 if (_formKey.currentState!.validate()) {
                                   var res = await _registerUser();
                                   if (res.statusCode == 200) {
-                                    Navigator.of(context).push(
+                                    //var key = await SharedPreferences.getInstance();
+                                    //key.setBool('Login', true);
+                                    await _requestPermission();
+                                    final mydata = MyData(
+                                      username: _controller2.text,
+                                      name: widget.name,
+                                      number: widget.number,
+                                      dp: widget.dp,
+                                      bio: widget.bio,
+                                      moments: [],
+                                    );
+                                    db.myTb.put(mydata);
+                                    /*Navigator.of(context).push(
                                       MaterialPageRoute(
                                         builder: ((context) {
                                           return const FaceAuth();
                                         }),
                                       ),
-                                    );
+                                    );*/
+                                    Navigator.of(context)
+                                        .pushNamed(HomeScreen.routename);
                                   } else {
                                     Navigator.of(context).pop();
                                     ScaffoldMessenger.of(context)
@@ -786,7 +852,7 @@ class ConfirmIdstate extends State<ConfirmId> {
   }
 }
 
-class FaceAuth extends StatefulWidget {
+/*class FaceAuth extends StatefulWidget {
   const FaceAuth({Key? key}) : super(key: key);
   @override
   _FaceAuthState createState() => _FaceAuthState();
@@ -889,4 +955,4 @@ class _FaceAuthState extends State<FaceAuth> {
       ),
     );
   }
-}
+}*/

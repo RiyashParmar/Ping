@@ -1,11 +1,17 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:dashed_circle/dashed_circle.dart';
 
 import '../MomentScreen/momentscreen.dart';
+import '../models/user.dart';
+import '../models/mydata.dart';
 
 class MomentBar extends StatelessWidget {
-  const MomentBar({Key? key, required this.users}) : super(key: key);
-  final List users;
+  const MomentBar({Key? key, required this.users, required this.me})
+      : super(key: key);
+  final List<User> users;
+  final MyData me;
 
   Widget story(int i, BuildContext context, double sp) {
     return SizedBox(
@@ -23,12 +29,12 @@ class MomentBar extends StatelessWidget {
                 );
               },
               child: DashedCircle(
-                dashes: 3,
+                dashes: users[i].moments.length,
                 color: Theme.of(context).iconTheme.color as Color,
                 child: Padding(
                   padding: EdgeInsets.all(sp * 0.004),
                   child: CircleAvatar(
-                    child: const Icon(Icons.person),
+                    backgroundImage: FileImage(File(users[i].dp)),
                     radius: sp * 0.03,
                   ),
                 ),
@@ -67,7 +73,7 @@ class MomentBar extends StatelessWidget {
                   onTap: () {
                     Navigator.of(context).pushNamed(
                       MomentScreen.routeName,
-                      arguments: ['My Moment', '+919099823148'],
+                      arguments: me,
                     );
                   },
                   onLongPress: () async {
@@ -115,12 +121,12 @@ class MomentBar extends StatelessWidget {
                     );
                   },
                   child: DashedCircle(
-                    dashes: 3,
+                    dashes: me.moments.length,
                     color: Theme.of(context).iconTheme.color as Color,
                     child: Padding(
                       padding: EdgeInsets.all(sp * 0.004),
                       child: CircleAvatar(
-                        child: const Icon(Icons.person),
+                        backgroundImage: FileImage(File(me.dp)),
                         radius: sp * 0.03,
                       ),
                     ),

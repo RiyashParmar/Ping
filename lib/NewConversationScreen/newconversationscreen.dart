@@ -1,38 +1,35 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:android_intent_plus/android_intent.dart';
-import '../NewGroupScreen/newgroupscreen.dart';
-import '../SettingsScreen/aboutusscreen.dart';
+import 'package:provider/provider.dart';
 
-import '../Helpers/users.dart';
+import '../NewGroupScreen/newgroupscreen.dart';
+//import '../SettingsScreen/aboutusscreen.dart';
 import '../ConversationScreen/conversationscreen.dart';
+import '../models/user.dart';
 
 class NewConversationScreen extends StatefulWidget {
   const NewConversationScreen({Key? key}) : super(key: key);
   static const routeName = '/NewChat';
-
   @override
   State<NewConversationScreen> createState() => _NewConversationScreenState();
 }
 
+String ip = 'http://192.168.43.62:3000';
+//String ip = 'http://10.0.2.2:3000';
+
 class _NewConversationScreenState extends State<NewConversationScreen> {
   @override
   Widget build(BuildContext context) {
+    final user = Provider.of<Users>(context);
     final MediaQueryData media = MediaQuery.of(context);
     final double sp = media.size.height > media.size.width
         ? media.size.height
         : media.size.width;
-    final user = Provider.of<Users>(context);
-
-    List<User> users = user.users;
-    String state = 'loaded';
-
-    FlutterContacts.addListener(() {
-      user.updatecontacts();
-      setState(() {});
-    });
+    final users = user.getUsers;
 
     return Scaffold(
       appBar: AppBar(
@@ -40,7 +37,7 @@ class _NewConversationScreenState extends State<NewConversationScreen> {
           children: [
             const Text('USERS'),
             Text(
-              '${users.length} people',
+              '${users.length} users',
               style: TextStyle(
                 fontSize: sp * 0.015,
               ),
@@ -51,16 +48,10 @@ class _NewConversationScreenState extends State<NewConversationScreen> {
           IconButton(
             iconSize: sp * 0.034,
             onPressed: () {
-              setState(() {
-                state = 'loading';
-                user.updatecontacts();
-              });
+              user.updateUsers();
+              setState(() {});
             },
-            icon: state == 'loaded'
-                ? const Icon(Icons.replay_circle_filled_sharp)
-                : const CircularProgressIndicator(
-                    color: Colors.black,
-                  ),
+            icon: const Icon(Icons.refresh_sharp),
           ),
         ],
       ),
@@ -68,36 +59,34 @@ class _NewConversationScreenState extends State<NewConversationScreen> {
           ? const Center(
               child: Text('No Users in your Contacts'),
             )
-          : state == 'loading'
-              ? const CircularProgressIndicator()
-              : ListView.builder(
-                  itemBuilder: (context, i) {
-                    return ListTile(
-                      onTap: () {
-                        Navigator.of(context).pushNamed(
-                          ConversationScreen.routeName,
-                          arguments: [users[i].name, users[i].number],
-                        );
-                      },
-                      leading: const CircleAvatar(
-                        child: Icon(Icons.person),
-                      ),
-                      title: Text(
-                        users[i].name,
-                        maxLines: 1,
-                      ),
-                      contentPadding: EdgeInsets.all(sp * 0.010),
+          : ListView.builder(
+              itemBuilder: (context, i) {
+                return ListTile(
+                  onTap: () {
+                    Navigator.of(context).pushNamed(
+                      ConversationScreen.routeName,
+                      arguments: users[i],
                     );
                   },
-                  itemCount: users.length,
-                ),
+                  leading: CircleAvatar(
+                    backgroundImage: FileImage(File(users[i].dp)),
+                  ),
+                  title: Text(
+                    users[i].name,
+                    maxLines: 1,
+                  ),
+                  contentPadding: EdgeInsets.all(sp * 0.010),
+                );
+              },
+              itemCount: users.length,
+            ),
       floatingActionButton: SpeedDial(
         foregroundColor: Theme.of(context).iconTheme.color,
         backgroundColor: Theme.of(context).primaryColor,
         renderOverlay: false,
         spaceBetweenChildren: sp * 0.009,
         spacing: sp * 0.009,
-        child: const Icon(Icons.favorite),
+        child: const Icon(Icons.menu),
         children: [
           SpeedDialChild(
             backgroundColor: Theme.of(context).primaryColor,
@@ -126,7 +115,7 @@ class _NewConversationScreenState extends State<NewConversationScreen> {
               ).launch();
             },
           ),
-          SpeedDialChild(
+          /*SpeedDialChild(
             backgroundColor: Theme.of(context).primaryColor,
             labelBackgroundColor:
                 Theme.of(context).backgroundColor == Colors.black
@@ -137,7 +126,7 @@ class _NewConversationScreenState extends State<NewConversationScreen> {
             onTap: () {
               Navigator.of(context).pushNamed(AboutUsScreen.routeName);
             },
-          ),
+          ),*/
           SpeedDialChild(
             backgroundColor: Theme.of(context).primaryColor,
             labelBackgroundColor:

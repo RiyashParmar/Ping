@@ -10,4 +10,6 @@ router.post('/login/confirmNumber', loginController.confirmNumber);
 
 router.post('/login/confirmOtp', loginController.confirmOtp);
 
+router.post('/login/changeLoginkey', loginController.changeLoginkey);
+
 exports.routes = router;

@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../models/mydata.dart';
+import '../models/user.dart';
+import '../models/chatroom.dart';
 
 class Conversation extends StatefulWidget {
   const Conversation({Key? key}) : super(key: key);
@@ -9,8 +15,10 @@ class Conversation extends StatefulWidget {
 
 class _ConversationState extends State<Conversation> {
   String size = 'Medium';
+
   @override
   Widget build(BuildContext context) {
+    final my = Provider.of<My>(context, listen: false);
     final MediaQueryData media = MediaQuery.of(context);
     final double sp = media.size.height > media.size.width
         ? media.size.height
@@ -31,10 +39,17 @@ class _ConversationState extends State<Conversation> {
                 left: sp * 0.03,
               ),
               onTap: () async {
-                await FilePicker.platform.pickFiles(type: FileType.image);
+                var key = await SharedPreferences.getInstance();
+                var pickedimage =
+                    await FilePicker.platform.pickFiles(type: FileType.image);
+                if (pickedimage != null) {
+                  key.setString(
+                      'Conversation-Bg', pickedimage.files[0].path as String);
+                  my.bgImg = key.getString('Conversation-Bg') ?? '';
+                }
               },
             ),
-            ListTile(
+            /*ListTile(
               leading: const Icon(Icons.backup),
               title: const Text('Backup'),
               subtitle: const Text('Save your important memories'),
@@ -47,11 +62,11 @@ class _ConversationState extends State<Conversation> {
                   builder: (ctx) => const Backup(),
                 ),
               ),
-            ),
+            ),*/
             ListTile(
               leading: const Icon(Icons.travel_explore_outlined),
               title: const Text('Options'),
-              subtitle: const Text('Export, Clear'),
+              subtitle: const Text('Clear convos'),
               contentPadding: EdgeInsets.only(
                 top: sp * 0.01,
                 left: sp * 0.03,
@@ -62,7 +77,7 @@ class _ConversationState extends State<Conversation> {
                 ),
               ),
             ),
-            ListTile(
+            /*ListTile(
               leading: const Icon(Icons.font_download),
               title: const Text('Font size'),
               subtitle: Text(size),
@@ -122,7 +137,7 @@ class _ConversationState extends State<Conversation> {
                   },
                 );
               },
-            ),
+            ),*/
           ],
         ),
       ),
@@ -304,9 +319,12 @@ class Options extends StatefulWidget {
 }
 
 class _OptionsState extends State<Options> {
-  List<bool?> a = [false, false, false];
+  bool? a = false;
+
   @override
   Widget build(BuildContext context) {
+    final user = Provider.of<Users>(context);
+    final room = Provider.of<ChatRooms>(context);
     final MediaQueryData media = MediaQuery.of(context);
     final double sp = media.size.height > media.size.width
         ? media.size.height
@@ -318,7 +336,7 @@ class _OptionsState extends State<Options> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            ListTile(
+            /*ListTile(
               leading: const Icon(Icons.upload_file),
               title: const Text('Export Conversations'),
               contentPadding: EdgeInsets.only(top: sp * 0.01, left: sp * 0.03),
@@ -352,7 +370,7 @@ class _OptionsState extends State<Options> {
                               Padding(padding: EdgeInsets.all(sp * 0.01)),
                               const Text(
                                   'These will delete all messages forever.'),
-                              CheckboxListTile(
+                              /*CheckboxListTile(
                                 value: a[0],
                                 onChanged: (val) {
                                   setState(() {
@@ -369,19 +387,22 @@ class _OptionsState extends State<Options> {
                                   });
                                 },
                                 title: const Text('Clear all fav messages'),
-                              ),
+                              ),*/
                               ElevatedButton(
+                                child: const Text('CLEAR'),
                                 onPressed: () {
-                                  Navigator.of(context).pop();
+                                  user.clearMsgs();
+                                  room.clearMsgs();
+                                  ScaffoldMessenger.of(context)
+                                      .clearSnackBars();
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      backgroundColor: Colors.grey,
                                       duration: Duration(seconds: 2),
                                       content: Text('CLEARED'),
                                     ),
                                   );
+                                  Navigator.of(context).pop();
                                 },
-                                child: const Text('CLEAR'),
                               ),
                             ],
                           );
@@ -391,7 +412,7 @@ class _OptionsState extends State<Options> {
                   },
                 );
               },
-            ),
+            ),*/
             ListTile(
               leading: const Icon(Icons.delete),
               title: const Text('Delete Conversations'),
@@ -410,32 +431,35 @@ class _OptionsState extends State<Options> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                'Delete all conversations and their messages!?',
+                                'Delete all conversations!?',
                                 style: TextStyle(
                                   fontSize: sp * 0.025,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              CheckboxListTile(
-                                value: a[2],
+                              /*CheckboxListTile(
+                                value: a,
                                 onChanged: (val) {
                                   setState(() {
-                                    a[2] = val;
+                                    a = val;
                                   });
                                 },
                                 title:
-                                    const Text('Delete all media with it...'),
-                              ),
+                                    const Text('Delete all messages with them'),
+                              ),*/
                               ElevatedButton(
                                 onPressed: () {
-                                  Navigator.of(context).pop();
+                                  user.clearAll();
+                                  room.clearAll();
+                                  ScaffoldMessenger.of(context)
+                                      .clearSnackBars();
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      backgroundColor: Colors.grey,
                                       duration: Duration(seconds: 2),
                                       content: Text('DELETED'),
                                     ),
                                   );
+                                  Navigator.of(context).pop();
                                 },
                                 child: const Text('DELETE'),
                               ),

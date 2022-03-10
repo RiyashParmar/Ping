@@ -29,7 +29,7 @@ class _NotificationState extends State<Notification> {
             ListTile(
               leading: const Icon(Icons.notifications_active),
               title: const Text('Notification Ringtone'),
-              subtitle: const Text('Default'),
+              subtitle: const Text('Notification tone'),
               contentPadding: EdgeInsets.only(
                 top: sp * 0.01,
                 left: sp * 0.03,
@@ -41,7 +41,7 @@ class _NotificationState extends State<Notification> {
             ListTile(
               leading: const Icon(Icons.call),
               title: const Text('Call Ringtone'),
-              subtitle: const Text('Default'),
+              subtitle: const Text('Call tone'),
               contentPadding: EdgeInsets.only(
                 top: sp * 0.01,
                 left: sp * 0.03,
@@ -50,7 +50,7 @@ class _NotificationState extends State<Notification> {
                 await FilePicker.platform.pickFiles(type: FileType.audio);
               },
             ),
-            ListTile(
+            /*ListTile(
               leading: const Icon(Icons.lightbulb),
               title: const Text('Notification-Light'),
               subtitle: Text(light),
@@ -186,7 +186,7 @@ class _NotificationState extends State<Notification> {
                   preview = !preview;
                 });
               },
-            ),
+            ),*/
           ],
         ),
       ),

@@ -16,9 +16,7 @@ import 'package:record/record.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:provider/provider.dart';
 
-import '../models/user.dart';
-import '../models/mydata.dart';
-import '../main.dart';
+import '../models/chatroom.dart';
 
 class ConversationBar extends StatefulWidget {
   ConversationBar({Key? key, required this.us, this.update}) : super(key: key);
@@ -100,8 +98,7 @@ class _ConversationState extends State<ConversationBar> {
 
   @override
   Widget build(BuildContext context) {
-    final user = Provider.of<Users>(context, listen: false);
-    final me = Provider.of<My>(context,listen: false);
+    final room = Provider.of<ChatRooms>(context, listen: false);
     final MediaQueryData media = MediaQuery.of(context);
     final double sp = media.size.height > media.size.width
         ? media.size.height
@@ -174,9 +171,8 @@ class _ConversationState extends State<ConversationBar> {
                             .format(DateTime.now())
                             .toString();
                         String msg = '0 ' + timestamp + ' A ' + file;
-                        user.addMsg(widget.us, msg);
+                        room.addMsg(widget.us, msg);
                         widget.update();
-                        socket.emit('message',{'sender':me.getMe.username,'reciver':widget.us.username,'msg':msg});
                         controller.clear();
                         setState(() {
                           voice = !voice;
@@ -352,11 +348,8 @@ class _ConversationState extends State<ConversationBar> {
                                   .toString();
                               String msg =
                                   '0 ' + timestamp + ' T ' + controller.text;
-                              String _msg =
-                                  '1 ' + timestamp + ' T ' + controller.text;
-                              user.addMsg(widget.us, msg);
+                              room.addMsg(widget.us, msg);
                               widget.update();
-                              socket.emit('message',{'sender':me.getMe.username,'reciver':widget.us.username,'msg':_msg});
                               controller.clear();
                             },
                           ),

@@ -1,4 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+
+import '../models/mydata.dart';
+
+String ip = 'http://192.168.43.62:3000';
+//String ip = 'http://10.0.2.2:3000';
 
 class HelpScreen extends StatelessWidget {
   const HelpScreen({Key? key}) : super(key: key);
@@ -40,7 +47,7 @@ class HelpScreen extends StatelessWidget {
             ),
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (ctx) => const Report(),
+                builder: (ctx) => Report(),
               ),
             ),
           ),
@@ -54,7 +61,7 @@ class HelpScreen extends StatelessWidget {
             ),
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (ctx) => const Feedback(),
+                builder: (ctx) => Feedback(),
               ),
             ),
           ),
@@ -79,14 +86,31 @@ class Guide extends StatelessWidget {
 }
 
 class Report extends StatelessWidget {
-  const Report({Key? key}) : super(key: key);
+  Report({Key? key}) : super(key: key);
+  final TextEditingController _controller = TextEditingController();
+  final GlobalKey<FormFieldState> _key = GlobalKey();
+
+  Future<int> _reportBug(username) async {
+    var url = Uri.parse(ip + '/app/reportBug');
+    var response = await http.post(
+      url,
+      body: {
+        'username': username,
+        'report': _controller.text.trim(),
+      },
+    );
+    return response.statusCode;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final my = Provider.of<My>(context);
     final MediaQueryData media = MediaQuery.of(context);
     final double sp = media.size.height > media.size.width
         ? media.size.height
         : media.size.width;
+    final me = my.getMe;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Report'),
@@ -96,7 +120,9 @@ class Report extends StatelessWidget {
           ListTile(
             title: const Text(
                 'Describe your problem in brief and we will look into it (Mention your phone name and model)'),
-            subtitle: TextField(
+            subtitle: TextFormField(
+              key: _key,
+              controller: _controller,
               maxLines: 5,
               decoration: InputDecoration(
                 enabledBorder: UnderlineInputBorder(
@@ -109,6 +135,15 @@ class Report extends StatelessWidget {
                   color: Theme.of(context).iconTheme.color,
                 ),
               ),
+              validator: (value) {
+                if (_controller.text.trim().length < 20) {
+                  return 'Please be more descriptive...';
+                } else if (_controller.text.trim().length > 1000) {
+                  return 'Please be inside 1000 characters';
+                } else {
+                  return null;
+                }
+              },
             ),
             contentPadding: EdgeInsets.only(
               top: sp * 0.01,
@@ -118,17 +153,33 @@ class Report extends StatelessWidget {
           ),
           ListTile(
             title: ElevatedButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    backgroundColor: Colors.grey,
-                    duration: Duration(seconds: 2),
-                    content: Text(
-                        'SUBMITED... sorry for inconvenience we will fix it asap!!'),
-                  ),
-                );
-              },
               child: const Text('SUBMIT'),
+              onPressed: () async {
+                if (_key.currentState!.validate()) {
+                  if (await _reportBug(me.username) == 200) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        backgroundColor: Colors.grey,
+                        duration: Duration(seconds: 2),
+                        content: Text(
+                          'SUBMITED... sorry for inconvenience we will fix it asap!!',
+                        ),
+                      ),
+                    );
+                    Navigator.of(context).pop();
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        backgroundColor: Colors.grey,
+                        duration: Duration(seconds: 2),
+                        content: Text(
+                          'Something went wrong please try again.',
+                        ),
+                      ),
+                    );
+                  }
+                }
+              },
             ),
           ),
         ],
@@ -138,14 +189,31 @@ class Report extends StatelessWidget {
 }
 
 class Feedback extends StatelessWidget {
-  const Feedback({Key? key}) : super(key: key);
+  Feedback({Key? key}) : super(key: key);
+  final TextEditingController _controller = TextEditingController();
+  final GlobalKey<FormFieldState> _key = GlobalKey();
+
+  Future<int> _feedback(username) async {
+    var url = Uri.parse(ip + '/app/feedback');
+    var response = await http.post(
+      url,
+      body: {
+        'username': username,
+        'feedback': _controller.text.trim(),
+      },
+    );
+    return response.statusCode;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final my = Provider.of<My>(context);
     final MediaQueryData media = MediaQuery.of(context);
     final double sp = media.size.height > media.size.width
         ? media.size.height
         : media.size.width;
+    final me = my.getMe;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Feedback'),
@@ -155,7 +223,9 @@ class Feedback extends StatelessWidget {
           ListTile(
             title: const Text(
                 'Write about your idea or suggested improvement like UI, Performance, Latency etc'),
-            subtitle: TextField(
+            subtitle: TextFormField(
+              key: _key,
+              controller: _controller,
               maxLines: 5,
               decoration: InputDecoration(
                 enabledBorder: UnderlineInputBorder(
@@ -168,6 +238,15 @@ class Feedback extends StatelessWidget {
                   color: Theme.of(context).iconTheme.color,
                 ),
               ),
+              validator: (value) {
+                if (_controller.text.trim().length < 20) {
+                  return 'Please be more descriptive...';
+                } else if (_controller.text.trim().length > 1000) {
+                  return 'Please be inside 1000 characters';
+                } else {
+                  return null;
+                }
+              },
             ),
             contentPadding: EdgeInsets.only(
               top: sp * 0.01,
@@ -177,16 +256,33 @@ class Feedback extends StatelessWidget {
           ),
           ListTile(
             title: ElevatedButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    backgroundColor: Colors.grey,
-                    duration: Duration(seconds: 2),
-                    content: Text('Thank you for the help by contributing!!'),
-                  ),
-                );
-              },
               child: const Text('SUBMIT'),
+              onPressed: () async {
+                if (_key.currentState!.validate()) {
+                  if (await _feedback(me.username) == 200) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        backgroundColor: Colors.grey,
+                        duration: Duration(seconds: 2),
+                        content: Text(
+                          'SUBMITED thanks for your input.',
+                        ),
+                      ),
+                    );
+                    Navigator.of(context).pop();
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        backgroundColor: Colors.grey,
+                        duration: Duration(seconds: 2),
+                        content: Text(
+                          'Something went wrong please try again.',
+                        ),
+                      ),
+                    );
+                  }
+                }
+              },
             ),
           ),
         ],

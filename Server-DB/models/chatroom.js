@@ -1,17 +1,13 @@
 const mongoose = require('mongoose');
 
 const model = mongoose.Schema({
-    _id: {
-        type: String,
-        required: true,
-    },
     name: {
         type: String,
         required: true,
     },
     type: {
         type: String,
-        Enumerator : ['group','broadcast'],
+        Enumerator: ['group', 'broadcast'],
         required: true,
     },
     createdby: {
@@ -30,6 +26,6 @@ const model = mongoose.Schema({
         type: String,
         required: true,
     },
-}, {versionKey: false});
+}, { versionKey: false });
 
-exports.chatroom = new mongoose.model("chatroom",model);
+module.exports = new mongoose.model("chatroom", model);

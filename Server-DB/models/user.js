@@ -1,10 +1,6 @@
 const mongoose = require('mongoose');
 
 const model = mongoose.Schema({
-    _id: {
-        type: String,
-        required: true,
-    },
     username: {
         type: String,
         required: true,
@@ -14,6 +10,10 @@ const model = mongoose.Schema({
         required: true,
     },
     number: {
+        type: String,
+        required: true,
+    },
+    loginkey: {
         type: String,
         required: true,
     },

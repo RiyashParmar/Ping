@@ -1,7 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../Helpers/users.dart';
+import '../models/user.dart';
 import 'broadcastwidget.dart';
 
 class NewBroadcastScreen extends StatefulWidget {
@@ -12,8 +14,8 @@ class NewBroadcastScreen extends StatefulWidget {
 }
 
 class _NewBroadcastScreenState extends State<NewBroadcastScreen> {
-  List<User> selected = [];
-  List<User> unselected = [];
+  List selected = [];
+  List unselected = [];
   bool a = true;
   int n = 0;
   int len = 0;
@@ -27,7 +29,7 @@ class _NewBroadcastScreenState extends State<NewBroadcastScreen> {
         : media.size.width;
 
     if (a) {
-      unselected = user.users;
+      unselected = user.getUsers;
       len = unselected.length;
       a = false;
     }
@@ -95,7 +97,8 @@ class _NewBroadcastScreenState extends State<NewBroadcastScreen> {
                                           });
                                         },
                                         child: CircleAvatar(
-                                          child: const Icon(Icons.person),
+                                          backgroundImage:
+                                              FileImage(File(selected[i].dp)),
                                           radius: sp * 0.03,
                                         ),
                                       ),
@@ -125,8 +128,8 @@ class _NewBroadcastScreenState extends State<NewBroadcastScreen> {
                               n++;
                             });
                           },
-                          leading: const CircleAvatar(
-                            child: Icon(Icons.person),
+                          leading: CircleAvatar(
+                            backgroundImage: FileImage(File(unselected[i].dp)),
                           ),
                           title: Text(
                             unselected[i].name,
