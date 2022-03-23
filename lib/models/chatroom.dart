@@ -49,6 +49,7 @@ class ChatRooms with ChangeNotifier {
   void addMsg(ChatRoom room, String msg) {
     room.msgs.add(msg);
     ChatRoom x = ChatRoom(
+      id: room.id,
       id_: room.id_,
       name: room.name,
       type: room.type,
@@ -58,12 +59,15 @@ class ChatRooms with ChangeNotifier {
       msgs: room.msgs,
     );
     db.chatroomTb.put(x);
+    _chatrooms.remove(room);
+    _chatrooms.add(x);
     notifyListeners();
   }
 
   void deleteRoom(ChatRoom room) {
     db.chatroomTb.remove(room.id as int);
     _chatrooms.remove(room);
+    notifyListeners();
   }
 
   void clearRoomMsg(ChatRoom a) {
@@ -80,6 +84,7 @@ class ChatRooms with ChangeNotifier {
     db.chatroomTb.put(room);
     _chatrooms.remove(a);
     _chatrooms.add(room);
+    notifyListeners();
   }
 
   void clearAll() {
@@ -98,6 +103,7 @@ class ChatRooms with ChangeNotifier {
       _chatrooms.removeAt(i);
       _chatrooms.add(room);
     }
+    notifyListeners();
   }
 
   List<String> getMsg(id) {
@@ -110,8 +116,29 @@ class ChatRooms with ChangeNotifier {
     return msgs;
   }
 
+  List getMembers(ChatRoom a) {
+    List members = [];
+    for (var i = 0; i < _chatrooms.length; i++) {
+      if (a.id_ == _chatrooms[i].id_) {
+        members = _chatrooms[i].members;
+      }
+    }
+    return members;
+  }
+
+  ChatRoom getRoom(ChatRoom r) {
+    for (var i = 0; i < _chatrooms.length; i++) {
+      if (_chatrooms[i].id_ == r.id_) {
+        r = _chatrooms[i];
+      }
+    }
+    return r;
+  }
+
   void addRoom(ChatRoom room) {
+    db.chatroomTb.put(room);
     _chatrooms.add(room);
+    notifyListeners();
   }
 
   List<ChatRoom> get getRooms {

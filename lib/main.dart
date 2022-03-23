@@ -1,4 +1,6 @@
 //Import flutter and dart packages also your own widgets
+// ignore_for_file: prefer_typing_uninitialized_variables, unnecessary_null_comparison
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -11,7 +13,6 @@ import 'package:socket_io_client/socket_io_client.dart' as s;
 
 import 'ReceiveIntentScreen/receiveintentscreen.dart';
 import 'HomeScreen/homescreen.dart';
-import 'MomentScreen/momentscreen.dart';
 import 'ConversationScreen/conversationscreen.dart';
 import 'ConversationScreen/shareddatascreen.dart';
 import 'NewConversationScreen/newconversationscreen.dart';
@@ -27,6 +28,7 @@ import 'ConversationScreen/conversationdetailscreen.dart';
 import 'ChatRoomScreen/chatroomscreen.dart';
 import 'ChatRoomScreen/chatroomdetailscreen.dart';
 import 'WatchPartyScreen/watchpartyscreen.dart';
+import 'NotificationService/notificationservice.dart';
 import 'models/db.dart';
 import 'models/user.dart';
 import 'models/mydata.dart';
@@ -37,22 +39,24 @@ String ip = 'http://192.168.43.62:3000';
 //The Main function the entry point of the app
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Necessary before running app
+  db == null ? db = await Db.create() : null; // Db init
   theme = await mode(); // Chceking and setting theme
   check = await login(); // Checking Login status
+  await NotificationService().init(); // Notification service
   runApp(const Ping()); // Starting execution from root class
 }
 
 bool check = false;
-late Db db;
+var db;
 int theme = 0;
 
 s.Socket socket = s.io(
-    ip,
-    s.OptionBuilder()
-        .setTransports(['websocket']) // for Flutter or Dart VM
-        .disableAutoConnect() // disable auto-connection
-        .setExtraHeaders({'foo': 'bar'}) // optional
-        .build());
+  ip,
+  s.OptionBuilder()
+      .setTransports(['websocket']) // for Flutter or Dart VM
+      .disableAutoConnect() // disable auto-connection
+      .build(),
+);
 
 Future<bool> login() async {
   var key = await SharedPreferences.getInstance();
@@ -79,9 +83,11 @@ class _PingState extends State<Ping> {
   void initState() {
     super.initState();
 
-    Db.create().then((value) {
-      return db = value;
-    });
+    db == null
+        ? Db.create().then((value) {
+            return db = value;
+          })
+        : null;
 
     ReceiveSharingIntent.getInitialText().then((String? value) {
       value != null
@@ -288,7 +294,6 @@ class _PingState extends State<Ping> {
               }
             }, // The first screen to be showed in app
             HomeScreen.routename: (ctx) => const HomeScreen(),
-            MomentScreen.routeName: (ctx) => MomentScreen(),
             ConversationScreen.routeName: (ctx) => const ConversationScreen(),
             NewConversationScreen.routeName: (ctx) =>
                 const NewConversationScreen(),

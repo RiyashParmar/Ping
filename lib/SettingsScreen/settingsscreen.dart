@@ -9,7 +9,7 @@ import '../models/mydata.dart';
 import 'profilewidget.dart';
 import 'generalwidget.dart';
 import 'conversationwidget.dart';
-import 'notificationwidget.dart' as n;
+//import 'notificationwidget.dart' as n;
 //import 'helpscreen.dart';
 //import 'aboutusscreen.dart';
 
@@ -108,7 +108,7 @@ class SettingsScreen extends StatelessWidget {
               );
             },
           ),
-          ListTile(
+          /*ListTile(
             contentPadding: EdgeInsets.only(
               top: sp * 0.01,
               left: sp * 0.05,
@@ -131,7 +131,7 @@ class SettingsScreen extends StatelessWidget {
               );
             },
           ),
-          /*ListTile(
+          ListTile(
             contentPadding: EdgeInsets.only(
               top: sp * 0.01,
               left: sp * 0.05,

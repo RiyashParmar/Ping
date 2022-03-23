@@ -86,7 +86,7 @@ class Menu extends StatelessWidget {
           child: Text(
             'Report',
           ),
-        ),*/
+        ),
         const PopupMenuItem<int>(
           value: 1,
           child: Text(
@@ -99,7 +99,7 @@ class Menu extends StatelessWidget {
             'Mute',
           ),
         ),
-        /*const PopupMenuItem<int>(
+        const PopupMenuItem<int>(
           value: 3,
           child: Text(
             'Add Shortcut',

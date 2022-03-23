@@ -26,7 +26,7 @@ router.post('/app/feedback', appController.feedback);
 
 router.post('/app/createChatroom', appController.createChatroom);
 
-router.post('/app/updateChatroom', appController.updateChatroom);
+router.post('/app/updateChatroom', appController.refreshChatroom);
 
 router.post('/app/leaveChatroom', appController.leaveChatroom);
 

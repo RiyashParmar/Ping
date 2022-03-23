@@ -16,7 +16,6 @@ class ActiveConversation extends StatefulWidget {
 }
 
 class _ActiveConversationState extends State<ActiveConversation> {
-
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<Users>(context);
@@ -38,7 +37,7 @@ class _ActiveConversationState extends State<ActiveConversation> {
     }
 
     return SizedBox(
-      height: media.size.height * 0.739,
+      height: media.size.height * 0.7,
       width: media.size.width,
       child: activeconvos.isEmpty
           ? Center(
@@ -75,7 +74,13 @@ class _ActiveConversationState extends State<ActiveConversation> {
                   subtitle: Text(activeconvos[i].msgs.length - 1 >= 0
                       ? activeconvos[i]
                           .msgs[activeconvos[i].msgs.length - 1]
-                          .substring(16)
+                          .substring(
+                              16,
+                              activeconvos[i] is User
+                                  ? null
+                                  : activeconvos[i]
+                                      .msgs[activeconvos[i].msgs.length - 1]
+                                      .indexOf(' ~;\\\$'))
                       : ''),
                   contentPadding: EdgeInsets.all(sp * 0.010),
                   trailing: Text(

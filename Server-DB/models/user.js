@@ -17,10 +17,6 @@ const model = mongoose.Schema({
         type: String,
         required: true,
     },
-    face_struct: {
-        type: String,
-        required: true,
-    },
     dp: {
         type: String,
         required: true,

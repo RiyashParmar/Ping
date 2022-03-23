@@ -39,8 +39,8 @@ exports.editInfo = async (req, res, next) => {
             dp = '/Users/nik9/Documents/projects/Ping/App/Android/ping/Server-DB/imgs/' + username + '.jpg';
             fs.unlinkSync(dp);
             fs.writeFileSync(dp, buffer);
-            var a = await user.updateOne({ username: key }, { $set: { dp: dp } });
-            if (a.modifiedCount > 0) {
+            var room = await user.updateOne({ username: key }, { $set: { dp: dp } });
+            if (room.modifiedCount > 0) {
                 dp = 'Successfully changed';
             } else {
                 dp = 'Please try again';
@@ -48,8 +48,8 @@ exports.editInfo = async (req, res, next) => {
         }
 
         if (name != 'null') {
-            var a = await user.updateOne({ username: key }, { $set: { name: name } });
-            if (a.modifiedCount > 0) {
+            var room = await user.updateOne({ username: key }, { $set: { name: name } });
+            if (room.modifiedCount > 0) {
                 name = 'Successfully changed';
             } else {
                 name = 'Please try again';
@@ -57,8 +57,8 @@ exports.editInfo = async (req, res, next) => {
         }
 
         if (bio != 'null') {
-            var a = await user.updateOne({ username: key }, { $set: { bio: bio } });
-            if (a.modifiedCount > 0) {
+            var room = await user.updateOne({ username: key }, { $set: { bio: bio } });
+            if (room.modifiedCount > 0) {
                 bio = 'Successfully changed';
             } else {
                 bio = 'Please try again';
@@ -84,8 +84,8 @@ exports.editInfo = async (req, res, next) => {
             if (await user.findOne({ username: username })) {
                 username = await _suggestUsername(username);
             } else {
-                var a = await user.updateOne({ username: key }, { $set: { username: username } });
-                if (a.modifiedCount > 0) {
+                var room = await user.updateOne({ username: key }, { $set: { username: username } });
+                if (room.modifiedCount > 0) {
                     username = 'Successfully changed';
                 } else {
                     username = 'Please try again';
@@ -111,8 +111,8 @@ exports.confirmInfo = async (req, res, next) => {
             var result = await otp.findOne({ _id: number, otp: OTP });
             if (result) {
                 if (Date.now() > result.expiry.getTime() + 600) {
-                    var a = await user.updateOne({ username: key }, { $set: { number: number } });
-                    if (a.modifiedCount > 0) {
+                    var room = await user.updateOne({ username: key }, { $set: { number: number } });
+                    if (room.modifiedCount > 0) {
                         OTP = 'Changed Succesfully';
                     } else {
                         OTP = 'Something went wrong please try again';
@@ -126,8 +126,8 @@ exports.confirmInfo = async (req, res, next) => {
         }
 
         if (username != 'null') {
-            var a = await user.updateOne({ username: key }, { $set: { username: username } });
-            if (a.modifiedCount > 0) {
+            var room = await user.updateOne({ username: key }, { $set: { username: username } });
+            if (room.modifiedCount > 0) {
                 username = 'Changed Succesfully';
             } else {
                 username = 'Something went wrong please try again';
@@ -162,8 +162,8 @@ exports.confirmLoginkey = async (req, res, next) => {
     try {
         var username = req.body.key;
         var loginkey = req.body.loginkey;
-        var a = await user.updateOne({ username: username }, { $set: { loginkey: loginkey } });
-        if (a.modifiedCount > 0) {
+        var room = await user.updateOne({ username: username }, { $set: { loginkey: loginkey } });
+        if (room.modifiedCount > 0) {
             res.sendStatus(200);
         } else {
             res.sendStatus(500);
@@ -204,8 +204,10 @@ exports.confirmOtp = async (req, res, next) => {
         var rs = await otp.findOne({ _id: number, otp: Otp });
         if (rs) {
             if (Date.now() > rs.expiry.getTime() + 600) {
-                var a = await user.deleteOne({ loginkey: loginkey, number: number }); /// also delete their dp...
-                if (a.deletedCount > 0) {
+                var b = await user.findOne({ loginkey: loginkey, number: number });
+                var room = await user.deleteOne({ loginkey: loginkey, number: number }); /// also delete their dp...
+                if (room.deletedCount > 0) {
+                    fs.unlinkSync(b.dp);
                     res.sendStatus(200);
                 } else {
                     res.sendStatus(500);
@@ -273,6 +275,9 @@ exports.feedback = async (req, res, next) => {
 
 exports.createChatroom = async (req, res, next) => {
     try {
+        const socket = req.app.get('socket');
+        const connectedClients = req.app.get('connectedClients');
+        const Todo = req.app.get('Todo');
         var name = req.body.name;
         var type = req.body.type;
         var createdby = req.body.createdby;
@@ -287,9 +292,32 @@ exports.createChatroom = async (req, res, next) => {
 
         var room = chatroom({ name: name, type: type, createdby: createdby, members: members, description: description, dp: dp });
         if (await room.save()) {
-            var a = await user.updateMany({ username: { $in: members } }, { $push: { chatrooms: room._id } });
-            if (a.modifiedCount > 0) {
-                res.status(200).json({ id: room._id }); // add/inform the other participants....
+            var room = await user.updateMany({ username: { $in: members } }, { $push: { chatrooms: room._id } });
+            if (room.modifiedCount > 0) {
+                room = await chatroom.findOne({ name: name, type: type, createdby: createdby, members: members, description: description, dp: dp });
+                if (room.type == 'group') {
+                    room.dp = fs.readFileSync(room.dp, 'base64');
+                    members.pop(createdby);
+                    for (let i = 0; i < members.length; i++) {
+                        if (connectedClients.length == 1) {
+                            Todo.push(['newroom', members[i], room]);
+                        } else {
+                            var chk = 0;
+                            for (let j = 0; j < connectedClients.length; j++) {
+                                if (connectedClients[j]['username'] == members[i]) {
+                                    chk++;
+                                    socket.to(connectedClients[j]['socketid']).emit('newroom', room);
+                                    break;
+                                } else if (j == connectedClients.length - 1 && chk == 0) {
+                                    Todo.push(['newroom', members[i], room]);
+                                }
+                            }
+                        }
+                    }
+                    res.status(200).json({ id: room._id });
+                } else {
+                    res.status(200).json({ id: room._id });
+                }
             } else {
                 await chatroom.deleteOne({ _id: room._id });
                 res.sendStatus(500);
@@ -303,7 +331,7 @@ exports.createChatroom = async (req, res, next) => {
     }
 }
 
-exports.updateChatroom = async (req, res, next) => {
+exports.refreshChatroom = async (req, res, next) => {
     try {
         var id = req.body.id;
         var room = await chatroom.findOne({ _id: id });
@@ -323,9 +351,9 @@ exports.leaveChatroom = async (req, res, next) => {
     try {
         var id = req.body.id;
         var username = req.body.username;
-        var a = await chatroom.updateOne({ _id: id }, { $pull: { members: username } });
-        if (a.modifiedCount > 0) {
-            var b = await user.updateOne({ username: username }, { $pull: { chatrooms: mongoose.Types.ObjectId(id) } });
+        var room = await chatroom.updateOne({ _id: id }, { $pull: { members: username } });
+        if (room.modifiedCount > 0) {
+            var b = await user.updateOne({ username: username }, { $pull: { chatrooms: id } });
             if (b.modifiedCount > 0) {
                 res.sendStatus(200);
             } else {

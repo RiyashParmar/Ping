@@ -13,10 +13,17 @@ exports.auth = async (req, res, next) => {
         if (data) {
             var room = await chatroom.find({ _id: { $in: data.chatrooms } });
             if (room) {
+                var rooms = [];
                 room.forEach(element => {
-                    element.dp = fs.readFileSync(element.dp, 'base64');
+                    if (element.type == 'group') {
+                        element.dp = fs.readFileSync(element.dp, 'base64');
+                        rooms.push(element);
+                    } else if (element.type == 'broadcast' && element.createdby == data.username) {
+                        element.dp = fs.readFileSync(element.dp, 'base64');
+                        rooms.push(element);
+                    }
                 });
-                data.chatrooms = room;
+                data.chatrooms = rooms;
                 data.dp = fs.readFileSync(data.dp, 'base64');
                 res.status(200).json({ data: data });
             } else {

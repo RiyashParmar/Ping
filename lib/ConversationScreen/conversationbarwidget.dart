@@ -1,5 +1,6 @@
 // ignore_for_file: must_be_immutable, prefer_typing_uninitialized_variables
 
+import 'dart:convert';
 import 'dart:async';
 import 'dart:io';
 
@@ -8,20 +9,20 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart' as p;
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:android_intent_plus/android_intent.dart';
 import 'package:location/location.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../models/user.dart';
 import '../models/mydata.dart';
 import '../main.dart';
 
 class ConversationBar extends StatefulWidget {
-  ConversationBar({Key? key, required this.us, this.update}) : super(key: key);
+  ConversationBar({Key? key, this.us, this.update}) : super(key: key);
   var us;
   var update;
   @override
@@ -39,27 +40,23 @@ class _ConversationState extends State<ConversationBar> {
   int st = 0;
   int so = 0;
 
-  void location() async {
+  Future<String> location() async {
     Location location = Location();
 
     if (await location.serviceEnabled() == false) {
       location.requestService();
     } else if (await location.serviceEnabled() == false) {
-      return;
+      return 'Permission denided';
     }
 
     if (await location.hasPermission() == PermissionStatus.denied) {
       location.requestPermission();
     } else if (await location.hasPermission() == PermissionStatus.denied) {
-      return;
+      return 'Permission denided';
     }
 
     final loc = await location.getLocation();
-    AndroidIntent(
-      action: 'android.intent.action.VIEW',
-      data: Uri.encodeFull(
-          'http://maps.google.com/maps?saddr=${loc.latitude},${loc.longitude}&daddr=${loc.latitude},${loc.longitude}'),
-    ).launch();
+    return 'https://maps.google.com/maps?daddr=${loc.latitude},${loc.longitude}';
   }
 
   void watch() {
@@ -100,12 +97,14 @@ class _ConversationState extends State<ConversationBar> {
 
   @override
   Widget build(BuildContext context) {
-    final user = Provider.of<Users>(context, listen: false);
-    final me = Provider.of<My>(context,listen: false);
+    final user = Provider.of<Users>(context);
+    final me = Provider.of<My>(context, listen: false);
     final MediaQueryData media = MediaQuery.of(context);
     final double sp = media.size.height > media.size.width
         ? media.size.height
         : media.size.width;
+    User user_ = user.getUser(widget.us);
+
     return SizedBox(
       height: sp * 0.07,
       width: media.size.width * 0.97,
@@ -174,10 +173,19 @@ class _ConversationState extends State<ConversationBar> {
                             .format(DateTime.now())
                             .toString();
                         String msg = '0 ' + timestamp + ' A ' + file;
-                        user.addMsg(widget.us, msg);
+                        File file_ = File(file);
+                        List<int> bytes = file_.readAsBytesSync();
+                        String fil = base64.encode(bytes);
+
+                        String msg_ = '1 ' + timestamp + ' A ' + fil;
+                        user.addMsg(user_, msg);
                         widget.update();
-                        socket.emit('message',{'sender':me.getMe.username,'reciver':widget.us.username,'msg':msg});
-                        controller.clear();
+                        socket.emit('message', {
+                          'type': 'single',
+                          'sender': me.getMe.username,
+                          'reciver': [user_.username],
+                          'msg': msg_
+                        });
                         setState(() {
                           voice = !voice;
                         });
@@ -204,17 +212,66 @@ class _ConversationState extends State<ConversationBar> {
                                     ListTile(
                                       leading: const Icon(Icons.camera_alt),
                                       title: const Text('Take a picture'),
-                                      onTap: () {},
+                                      onTap: () async {
+                                        ImagePicker picker = ImagePicker();
+                                        var picked = await picker.pickImage(
+                                            source: ImageSource.camera);
+                                        var timestamp = DateFormat("hh:mm:ss a")
+                                            .format(DateTime.now())
+                                            .toString();
+                                        String msg = '0 ' +
+                                            timestamp +
+                                            ' F ' +
+                                            picked!.path;
+                                        File file_ = File(picked.path);
+                                        List<int> bytes =
+                                            file_.readAsBytesSync();
+                                        String fil = base64.encode(bytes);
+
+                                        String msg_ =
+                                            '1 ' + timestamp + ' F ' + fil;
+                                        user.addMsg(user_, msg);
+                                        widget.update();
+                                        socket.emit('message', {
+                                          'type': 'single',
+                                          'sender': me.getMe.username,
+                                          'reciver': [user_.username],
+                                          'msg': msg_,
+                                          'ext': 'jpg',
+                                        });
+                                      },
                                     ),
                                     ListTile(
                                       leading: const Icon(Icons.videocam),
                                       title: const Text('Record a video'),
-                                      onTap: () {},
-                                    ),
-                                    ListTile(
-                                      leading: const Icon(Icons.library_add),
-                                      title: const Text('Pick from gallery'),
-                                      onTap: () {},
+                                      onTap: () async {
+                                        ImagePicker picker = ImagePicker();
+                                        var picked = await picker.pickVideo(
+                                            source: ImageSource.camera);
+                                        var timestamp = DateFormat("hh:mm:ss a")
+                                            .format(DateTime.now())
+                                            .toString();
+                                        String msg = '0 ' +
+                                            timestamp +
+                                            ' F ' +
+                                            picked!.path;
+                                        File file_ = File(picked.path);
+                                        List<int> bytes =
+                                            file_.readAsBytesSync();
+                                        String fil = base64.encode(bytes);
+
+                                        String msg_ =
+                                            '1 ' + timestamp + ' F ' + fil;
+                                        user.addMsg(user_, msg);
+                                        widget.update();
+                                        socket.emit('message', {
+                                          'type': 'single',
+                                          'sender': me.getMe.username,
+                                          'reciver': [user_.username],
+                                          'msg': msg_,
+                                          'ext': 'mp4',
+                                        });
+                                      },
                                     ),
                                   ],
                                 );
@@ -264,8 +321,34 @@ class _ConversationState extends State<ConversationBar> {
                           child: const Icon(Icons.play_circle),
                           label: 'Send Media or Files',
                           onTap: () async {
-                            await FilePicker.platform.pickFiles(
-                                type: FileType.any, allowMultiple: true);
+                            FilePickerResult? picker = await FilePicker.platform
+                                .pickFiles(
+                                    type: FileType.any, allowMultiple: true);
+                            List<PlatformFile> picked = picker!.files;
+                            var timestamp = DateFormat("hh:mm:ss a")
+                                .format(DateTime.now())
+                                .toString();
+
+                            for (var i = 0; i < picked.length; i++) {
+                              String msg = '0 ' +
+                                  timestamp +
+                                  ' F ' +
+                                  (picked[i].path as String);
+                              File file_ = File(picked[i].path as String);
+                              List<int> bytes = file_.readAsBytesSync();
+                              String fil = base64.encode(bytes);
+
+                              String msg_ = '1 ' + timestamp + ' F ' + fil;
+                              user.addMsg(user_, msg);
+                              widget.update();
+                              socket.emit('message', {
+                                'type': 'single',
+                                'sender': me.getMe.username,
+                                'reciver': [user_.username],
+                                'msg': msg_,
+                                'ext': picked[i].extension,
+                              });
+                            }
                           },
                         ),
                         SpeedDialChild(
@@ -276,11 +359,26 @@ class _ConversationState extends State<ConversationBar> {
                                   : Colors.white,
                           child: const Icon(Icons.location_on),
                           label: 'Send Location',
-                          onTap: () {
-                            location();
+                          onTap: () async {
+                            var timestamp = DateFormat("hh:mm:ss-a")
+                                .format(DateTime.now())
+                                .toString();
+                            String msg =
+                                '0 ' + timestamp + ' L ' + await location();
+                            String _msg =
+                                '1 ' + timestamp + ' L ' + await location();
+                            user.addMsg(user_, msg);
+                            widget.update();
+                            socket.emit('message', {
+                              'type': 'single',
+                              'sender': me.getMe.username,
+                              'reciver': [user_.username],
+                              'msg': _msg
+                            });
+                            controller.clear();
                           },
                         ),
-                        SpeedDialChild(
+                        /*SpeedDialChild(
                           backgroundColor: Theme.of(context).primaryColor,
                           labelBackgroundColor:
                               Theme.of(context).backgroundColor == Colors.black
@@ -294,7 +392,7 @@ class _ConversationState extends State<ConversationBar> {
                               data: Uri.encodeFull('content://contacts/people'),
                             ).launch();
                           },
-                        ),
+                        ),*/
                       ],
                     ),
                   ),
@@ -328,7 +426,6 @@ class _ConversationState extends State<ConversationBar> {
                                   });
                                   Directory? dir =
                                       await getExternalStorageDirectory();
-
                                   var timestamp = DateFormat("/hh:mm:ss-a")
                                           .format(DateTime.now())
                                           .toString() +
@@ -354,9 +451,14 @@ class _ConversationState extends State<ConversationBar> {
                                   '0 ' + timestamp + ' T ' + controller.text;
                               String _msg =
                                   '1 ' + timestamp + ' T ' + controller.text;
-                              user.addMsg(widget.us, msg);
+                              user.addMsg(user_, msg);
                               widget.update();
-                              socket.emit('message',{'sender':me.getMe.username,'reciver':widget.us.username,'msg':_msg});
+                              socket.emit('message', {
+                                'type': 'single',
+                                'sender': me.getMe.username,
+                                'reciver': [user_.username],
+                                'msg': _msg
+                              });
                               controller.clear();
                             },
                           ),

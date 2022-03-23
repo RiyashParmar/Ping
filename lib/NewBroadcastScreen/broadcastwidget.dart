@@ -12,7 +12,6 @@ import '../ChatRoomScreen/chatroomscreen.dart';
 import '../HomeScreen/homescreen.dart';
 import '../models/mydata.dart';
 import '../models/chatroom.dart';
-import '../main.dart';
 
 String ip = 'http://192.168.43.62:3000';
 //String ip = 'http://10.0.2.2:3000';
@@ -131,7 +130,7 @@ class _BroadcastState extends State<Broadcast> {
                                             title: const Text('Take a picture'),
                                             onTap: () async {
                                               image = await picker.pickImage(
-                                                  source: ImageSource.gallery);
+                                                  source: ImageSource.camera);
                                               setState(() {
                                                 dp = image != null
                                                     ? image.path
@@ -310,7 +309,6 @@ class _BroadcastState extends State<Broadcast> {
                       members: members(widget.user),
                       msgs: [],
                     );
-                    db.chatroomTb.put(brdcast);
                     chatroom.addRoom(brdcast);
                     Navigator.of(context).pushNamedAndRemoveUntil(
                         ChatRoomScreen.routeName,

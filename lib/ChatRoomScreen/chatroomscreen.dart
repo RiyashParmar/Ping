@@ -3,6 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:provider/provider.dart';
+import 'package:open_file/open_file.dart';
+import 'package:flutter_linkify/flutter_linkify.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/chatroom.dart';
 import '../models/mydata.dart';
@@ -26,26 +29,34 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     image = img;
   }
 
-  void play(String path) {
-    player.open(Audio.file(path));
-  }
-
   Widget msgUI(String txt) {
     if (txt.substring(14, 15) == 'T') {
-      return Text(txt.substring(16));
-    } /**else if (txt.format == 'image') {
-    } **/
-    else if (txt.substring(14, 15) == 'A') {
+      return Text(txt.substring(16, txt.indexOf(' ~;\\\$')));
+    } else if (txt.substring(14, 15) == 'A') {
+      return GestureDetector(
+        child: const Icon(Icons.audiotrack),
+        onTap: () {
+          OpenFile.open(txt.substring(16, txt.indexOf(' ~;\\\$')));
+        },
+      );
+    } else if (txt.substring(14, 15) == 'F') {
+      return GestureDetector(
+        child: const Icon(Icons.file_present_rounded),
+        onTap: () {
+          OpenFile.open(txt.substring(16, txt.indexOf(' ~;\\\$')));
+        },
+      );
+    } else if (txt.substring(14, 15) == 'L') {
       return GestureDetector(
         onTap: () {
-          play(txt.substring(16));
-          //print(txt.substring(16));
+          launch(txt.substring(16));
         },
-        child: const Icon(Icons.audiotrack),
+        child: Linkify(
+          text: txt.substring(16, txt.indexOf(' ~;\\\$')),
+          options: const LinkifyOptions(humanize: false),
+        ),
       );
     }
-    /**else if (txt.substring(14,15) == 'V') {
-    } else if (txt.substring(14,15) == 'F') {}**/
     return const Text('error');
   }
 
@@ -132,9 +143,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                         padding: EdgeInsets.only(
                           top: sp * 0.01,
                           left:
-                              convo[i].startsWith('0') ? sp * 0.1 : sp * 0.005,
+                              convo[i].startsWith('0') ? sp * 0.09 : sp * 0.005,
                           right:
-                              convo[i].startsWith('0') ? sp * 0.005 : sp * 0.1,
+                              convo[i].startsWith('0') ? sp * 0.005 : sp * 0.09,
                           bottom: sp * 0.01,
                         ),
                         child: Row(
@@ -152,20 +163,28 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                             convo[i].substring(0, 1) == '0'
                                 ? SizedBox(width: sp * 0.01)
                                 : const Padding(padding: EdgeInsets.zero),
-                            Container(
-                              constraints: BoxConstraints(maxWidth: sp * 0.30),
-                              padding: EdgeInsets.all(sp * 0.013),
-                              decoration: BoxDecoration(
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.grey,
-                                    blurRadius: sp * 0.005,
+                            Column(
+                              children: [
+                                Text(convo[i].substring(
+                                    convo[i].indexOf(' ~;\\\$') + 5)),
+                                Container(
+                                  constraints:
+                                      BoxConstraints(maxWidth: sp * 0.30),
+                                  padding: EdgeInsets.all(sp * 0.013),
+                                  decoration: BoxDecoration(
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.grey,
+                                        blurRadius: sp * 0.005,
+                                      ),
+                                    ],
+                                    borderRadius:
+                                        BorderRadius.circular(sp * 0.02),
+                                    color: Theme.of(context).backgroundColor,
                                   ),
-                                ],
-                                borderRadius: BorderRadius.circular(sp * 0.02),
-                                color: Theme.of(context).backgroundColor,
-                              ),
-                              child: msgUI(convo[i]),
+                                  child: msgUI(convo[i]),
+                                ),
+                              ],
                             ),
                             convo[i].substring(0, 1) == '1'
                                 ? SizedBox(width: sp * 0.01)

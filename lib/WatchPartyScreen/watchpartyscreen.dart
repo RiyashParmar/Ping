@@ -1,11 +1,13 @@
+// ignore_for_file: prefer_typing_uninitialized_variables
+
 import 'dart:io';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:http/http.dart' as http;
 
+import '../models/mydata.dart';
 import '../models/user.dart';
+import '../main.dart';
 
 import 'playerwidget.dart';
 
@@ -21,28 +23,13 @@ class WatchPartyScreen extends StatefulWidget {
 
 class _WatchPartyScreenState extends State<WatchPartyScreen> {
   bool init = true;
-  var selected = [];
+  var selected;
   var unselected = [];
-
-  Future<http.Response> _startParty() async {
-    List<String> _selected = [];
-    for (var item in selected) {
-      _selected.add(item.username);
-    }
-
-    var url = Uri.parse(ip + '/app/startParty');
-    var response = await http.post(
-      url,
-      body: {
-        'invites': jsonEncode(_selected),
-      },
-    );
-    return response;
-  }
 
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<Users>(context);
+    final me = Provider.of<My>(context);
     if (init) {
       init = false;
       unselected = user.getUsers;
@@ -70,7 +57,7 @@ class _WatchPartyScreenState extends State<WatchPartyScreen> {
                           subtitle: Text(unselected[i].username),
                           onTap: () {
                             setState(() {
-                              selected.add(unselected[i]);
+                              selected = unselected[i];
                               unselected.remove(unselected[i]);
                               Navigator.of(context).pop();
                             });
@@ -84,36 +71,65 @@ class _WatchPartyScreenState extends State<WatchPartyScreen> {
         ],
       ),
       body: SingleChildScrollView(
-        child: ListView.builder(
-          shrinkWrap: true,
-          itemCount: selected.length,
-          itemBuilder: (ctx, i) {
-            return ListTile(
-              leading: CircleAvatar(
-                backgroundImage: FileImage(
-                  File(selected[i].dp),
+        child: selected != null
+            ? ListTile(
+                leading: CircleAvatar(
+                  backgroundImage: FileImage(
+                    File(selected.dp),
+                  ),
                 ),
-              ),
-              title: Text(selected[i].name),
-              subtitle: Text(selected[i].username),
-              trailing: const Icon(Icons.delete, color: Colors.red),
-              onTap: () {
-                setState(() {
-                  unselected.add(selected[i]);
-                  selected.remove(selected[i]);
-                });
-              },
-            );
-          },
-        ),
+                title: Text(selected.name),
+                subtitle: Text(selected.username),
+                trailing: const Icon(Icons.delete, color: Colors.red),
+                onTap: () {
+                  setState(() {
+                    unselected.add(selected);
+                    selected = null;
+                  });
+                },
+              )
+            : null,
       ),
-      floatingActionButton: selected.isNotEmpty
+      floatingActionButton: selected != null
           ? FloatingActionButton(
               child: const Icon(Icons.check),
               onPressed: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (ctx) {
-                  return const Player();
-                },),);
+                socket.emit('startparty', {
+                  'invite': me.getMe.username,
+                  'username': selected.username,
+                });
+
+                socket.on('resparty', (data) {
+                  if (data['res'] == '1') {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (ctx) {
+                          return Player(username: selected.username);
+                        },
+                      ),
+                    );
+                  } else if (data['res'] == '2') {
+                    ScaffoldMessenger.of(context).clearSnackBars();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        duration: Duration(seconds: 5),
+                        content: Text(
+                          'Waiting for User...',
+                        ),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).clearSnackBars();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        duration: Duration(seconds: 5),
+                        content: Text(
+                          'User declined or offline.',
+                        ),
+                      ),
+                    );
+                  }
+                });
               },
             )
           : null,

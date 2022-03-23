@@ -271,7 +271,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                     },
                   );
                 },
-              ),*/
+              ),
               ListTile(
                 leading: const Icon(
                   Icons.block,
@@ -323,7 +323,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                     },
                   );
                 },
-              ),
+              ),*/
               ListTile(
                 leading: const Icon(
                   Icons.delete,

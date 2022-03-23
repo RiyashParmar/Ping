@@ -158,6 +158,7 @@ class Users with ChangeNotifier {
     db.userTb.put(a);
     _users.remove(a);
     _users.add(user);
+    notifyListeners();
   }
 
   void clearAll() {
@@ -177,16 +178,54 @@ class Users with ChangeNotifier {
       _users.removeAt(i);
       _users.add(a);
     }
+    notifyListeners();
+  }
+
+  void addMoment(User u, String m) {
+    u.moments.add(m);
+    User x = User(
+      id: u.id,
+      username: u.username,
+      name: u.name,
+      number: u.number,
+      dp: u.dp,
+      bio: u.bio,
+      msgs: u.msgs,
+      moments: u.moments,
+    );
+    db.userTb.put(x);
+    _users.removeWhere((element) => element.id == u.id);
+    _users.add(x);
+    notifyListeners();
+  }
+
+  List<String> getMoments() {
+    List<String> moments = [];
+    for (var i = 0; i < _users.length; i++) {
+      for (var item in _users[i].moments) {
+        moments.add(item);
+      }
+    }
+    return moments;
   }
 
   List<String> getMsg(id) {
     List<String> msgs = [];
     for (var item in _users) {
       if (item.id == id) {
-        msgs = [...item.msgs];
+        msgs = item.msgs;
       }
     }
     return msgs;
+  }
+
+  User getUser(User u) {
+    for (var i = 0; i < _users.length; i++) {
+      if (_users[i].username == u.username) {
+        u = _users[i];
+      }
+    }
+    return u;
   }
 
   List<User> get getUsers {

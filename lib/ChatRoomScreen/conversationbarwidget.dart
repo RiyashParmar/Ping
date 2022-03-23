@@ -1,5 +1,6 @@
 // ignore_for_file: must_be_immutable, prefer_typing_uninitialized_variables
 
+import 'dart:convert';
 import 'dart:async';
 import 'dart:io';
 
@@ -8,15 +9,17 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart' as p;
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:android_intent_plus/android_intent.dart';
 import 'package:location/location.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../models/chatroom.dart';
+import '../models/mydata.dart';
+import '../main.dart';
 
 class ConversationBar extends StatefulWidget {
   ConversationBar({Key? key, required this.us, this.update}) : super(key: key);
@@ -37,27 +40,23 @@ class _ConversationState extends State<ConversationBar> {
   int st = 0;
   int so = 0;
 
-  void location() async {
+  Future<String> location() async {
     Location location = Location();
 
     if (await location.serviceEnabled() == false) {
       location.requestService();
     } else if (await location.serviceEnabled() == false) {
-      return;
+      return 'Permission denided';
     }
 
     if (await location.hasPermission() == PermissionStatus.denied) {
       location.requestPermission();
     } else if (await location.hasPermission() == PermissionStatus.denied) {
-      return;
+      return 'Permission denided';
     }
 
     final loc = await location.getLocation();
-    AndroidIntent(
-      action: 'android.intent.action.VIEW',
-      data: Uri.encodeFull(
-          'http://maps.google.com/maps?saddr=${loc.latitude},${loc.longitude}&daddr=${loc.latitude},${loc.longitude}'),
-    ).launch();
+    return 'https://maps.google.com/maps?daddr=${loc.latitude},${loc.longitude}';
   }
 
   void watch() {
@@ -98,11 +97,16 @@ class _ConversationState extends State<ConversationBar> {
 
   @override
   Widget build(BuildContext context) {
-    final room = Provider.of<ChatRooms>(context, listen: false);
+    final room = Provider.of<ChatRooms>(context);
+    final me = Provider.of<My>(context, listen: false);
     final MediaQueryData media = MediaQuery.of(context);
     final double sp = media.size.height > media.size.width
         ? media.size.height
         : media.size.width;
+    List members = room.getMembers(widget.us);
+    ChatRoom re = room.getRoom(widget.us);
+    String r = re.id_;
+
     return SizedBox(
       height: sp * 0.07,
       width: media.size.width * 0.97,
@@ -170,9 +174,30 @@ class _ConversationState extends State<ConversationBar> {
                         var timestamp = DateFormat("hh:mm:ss a")
                             .format(DateTime.now())
                             .toString();
-                        String msg = '0 ' + timestamp + ' A ' + file;
-                        room.addMsg(widget.us, msg);
+                        String msg = '0 ' +
+                            timestamp +
+                            ' A ' +
+                            file +
+                            ' ~;\\\$' +
+                            me.getMe.name;
+                        File file_ = File(file);
+                        List<int> bytes = file_.readAsBytesSync();
+                        String fil = base64.encode(bytes);
+
+                        String _msg = '1 ' +
+                            timestamp +
+                            ' A ' +
+                            fil +
+                            ' ~;\\\$' +
+                            me.getMe.name;
+                        room.addMsg(re, msg);
                         widget.update();
+                        socket.emit('message', {
+                          'type': re.type == 'group' ? r : 'single',
+                          'sender': me.getMe.name,
+                          'reciver': members,
+                          'msg': _msg
+                        });
                         controller.clear();
                         setState(() {
                           voice = !voice;
@@ -200,17 +225,68 @@ class _ConversationState extends State<ConversationBar> {
                                     ListTile(
                                       leading: const Icon(Icons.camera_alt),
                                       title: const Text('Take a picture'),
-                                      onTap: () {},
+                                      onTap: () async {
+                                        ImagePicker picker = ImagePicker();
+                                        var picked = await picker.pickImage(
+                                            source: ImageSource.camera);
+                                        var timestamp = DateFormat("hh:mm:ss a")
+                                            .format(DateTime.now())
+                                            .toString();
+                                        String msg = '0 ' +
+                                            timestamp +
+                                            ' F ' +
+                                            picked!.path;
+                                        File file_ = File(picked.path);
+                                        List<int> bytes =
+                                            file_.readAsBytesSync();
+                                        String fil = base64.encode(bytes);
+
+                                        String msg_ =
+                                            '1 ' + timestamp + ' F ' + fil;
+                                        room.addMsg(re, msg);
+                                        widget.update();
+                                        socket.emit('message', {
+                                          'type':
+                                              re.type == 'group' ? r : 'single',
+                                          'sender': me.getMe.username,
+                                          'reciver': members,
+                                          'msg': msg_,
+                                          'ext': 'jpg',
+                                        });
+                                      },
                                     ),
                                     ListTile(
                                       leading: const Icon(Icons.videocam),
                                       title: const Text('Record a video'),
-                                      onTap: () {},
-                                    ),
-                                    ListTile(
-                                      leading: const Icon(Icons.library_add),
-                                      title: const Text('Pick from gallery'),
-                                      onTap: () {},
+                                      onTap: () async {
+                                        ImagePicker picker = ImagePicker();
+                                        var picked = await picker.pickVideo(
+                                            source: ImageSource.camera);
+                                        var timestamp = DateFormat("hh:mm:ss a")
+                                            .format(DateTime.now())
+                                            .toString();
+                                        String msg = '0 ' +
+                                            timestamp +
+                                            ' F ' +
+                                            picked!.path;
+                                        File file_ = File(picked.path);
+                                        List<int> bytes =
+                                            file_.readAsBytesSync();
+                                        String fil = base64.encode(bytes);
+
+                                        String msg_ =
+                                            '1 ' + timestamp + ' F ' + fil;
+                                        room.addMsg(re, msg);
+                                        widget.update();
+                                        socket.emit('message', {
+                                          'type':
+                                              re.type == 'group' ? r : 'single',
+                                          'sender': me.getMe.username,
+                                          'reciver': members,
+                                          'msg': msg_,
+                                          'ext': 'mp4',
+                                        });
+                                      },
                                     ),
                                   ],
                                 );
@@ -260,8 +336,40 @@ class _ConversationState extends State<ConversationBar> {
                           child: const Icon(Icons.play_circle),
                           label: 'Send Media or Files',
                           onTap: () async {
-                            await FilePicker.platform.pickFiles(
-                                type: FileType.any, allowMultiple: true);
+                            FilePickerResult? picker = await FilePicker.platform
+                                .pickFiles(
+                                    type: FileType.any, allowMultiple: true);
+                            List<PlatformFile> picked = picker!.files;
+                            var timestamp = DateFormat("hh:mm:ss a")
+                                .format(DateTime.now())
+                                .toString();
+                            for (var i = 0; i < picked.length; i++) {
+                              String msg = '0 ' +
+                                  timestamp +
+                                  ' F ' +
+                                  (picked[i].path as String) +
+                                  ' ~;\\\$' +
+                                  me.getMe.name;
+                              File file_ = File(picked[i].path as String);
+                              List<int> bytes = file_.readAsBytesSync();
+                              String fil = base64.encode(bytes);
+
+                              String msg_ = '1 ' +
+                                  timestamp +
+                                  ' F ' +
+                                  fil +
+                                  ' ~;\\\$' +
+                                  me.getMe.name;
+                              room.addMsg(re, msg);
+                              widget.update();
+                              socket.emit('message', {
+                                'type': re.type == 'group' ? r : 'single',
+                                'sender': me.getMe.username,
+                                'reciver': members,
+                                'msg': msg_,
+                                'ext': picked[i].extension,
+                              });
+                            }
                           },
                         ),
                         SpeedDialChild(
@@ -272,11 +380,34 @@ class _ConversationState extends State<ConversationBar> {
                                   : Colors.white,
                           child: const Icon(Icons.location_on),
                           label: 'Send Location',
-                          onTap: () {
-                            location();
+                          onTap: () async {
+                            var timestamp = DateFormat("hh:mm:ss-a")
+                                .format(DateTime.now())
+                                .toString();
+                            String msg = '0 ' +
+                                timestamp +
+                                ' T ' +
+                                await location() +
+                                ' ~;\\\$' +
+                                me.getMe.name;
+                            String _msg = '1 ' +
+                                timestamp +
+                                ' T ' +
+                                await location() +
+                                ' ~;\\\$' +
+                                me.getMe.name;
+                            room.addMsg(re, msg);
+                            widget.update();
+                            controller.clear();
+                            socket.emit('message', {
+                              'type': re.type == 'group' ? r : 'single',
+                              'sender': me.getMe.name,
+                              'reciver': members,
+                              'msg': _msg
+                            });
                           },
                         ),
-                        SpeedDialChild(
+                        /*SpeedDialChild(
                           backgroundColor: Theme.of(context).primaryColor,
                           labelBackgroundColor:
                               Theme.of(context).backgroundColor == Colors.black
@@ -290,7 +421,7 @@ class _ConversationState extends State<ConversationBar> {
                               data: Uri.encodeFull('content://contacts/people'),
                             ).launch();
                           },
-                        ),
+                        ),*/
                       ],
                     ),
                   ),
@@ -346,11 +477,29 @@ class _ConversationState extends State<ConversationBar> {
                               var timestamp = DateFormat("hh:mm:ss-a")
                                   .format(DateTime.now())
                                   .toString();
-                              String msg =
-                                  '0 ' + timestamp + ' T ' + controller.text;
-                              room.addMsg(widget.us, msg);
+                              String msg = '0 ' +
+                                  timestamp +
+                                  ' T ' +
+                                  controller.text +
+                                  ' ~;\\\$' +
+                                  me.getMe.name;
+                              String _msg = '1 ' +
+                                  timestamp +
+                                  ' T ' +
+                                  controller.text +
+                                  ' ~;\\\$' +
+                                  me.getMe.name;
+                              room.addMsg(re, msg);
                               widget.update();
                               controller.clear();
+                              socket.emit('message', {
+                                'type': re.type == 'group' ? r : 'single',
+                                'sender': re.type == 'group'
+                                    ? me.getMe.name
+                                    : me.getMe.username,
+                                'reciver': members,
+                                'msg': _msg
+                              });
                             },
                           ),
                   ),
