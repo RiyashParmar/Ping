@@ -52,7 +52,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   void setInterval(String username, socket) {
-    Duration periodic = const Duration(milliseconds: 30000);
+    Duration periodic = const Duration(milliseconds: 2000);
     Timer.periodic(periodic, (intervalTime) {
       socket.emit('heartbeat', {'username': username});
     });

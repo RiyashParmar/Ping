@@ -43,7 +43,7 @@ function ping() {
     }
 }
 
-setInterval(ping, 36000);
+setInterval(ping, 6000);
 
 socket.on('connection', (io) => {
 
@@ -56,7 +56,7 @@ socket.on('connection', (io) => {
         var id = new Object();
         id.socketid = io.id;
         id.username = data.username;
-        id.expiry = Date.now() + 30000;
+        id.expiry = Date.now() + 4000;
         connectedClients.push(id);
     });
 
@@ -64,7 +64,7 @@ socket.on('connection', (io) => {
         var username = data['username'];
         for (const key in connectedClients) {
             if (key['username'] == username) {
-                key['expiry'] = Date.now() + 30000;
+                key['expiry'] = Date.now() + 4000;
             }
         }
     });

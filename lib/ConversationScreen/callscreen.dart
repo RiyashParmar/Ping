@@ -80,7 +80,7 @@ class _CallScreenState extends State<CallScreen> {
     //widget.mode ? _createoffer() : null;
 
     _peerConnection.onRenegotiationNeeded = () {
-      _createoffer();
+      widget.mode ? _createoffer() : null;
     };
 
     _peerConnection.onTrack = (event) {
@@ -94,8 +94,20 @@ class _CallScreenState extends State<CallScreen> {
       if (event == ConnectionState.done) {
         print(
             '------------------------------------------------------------------------------------');
+        _localStream!.getTracks().forEach((track) {
+          _peerConnection.addTrack(track, _localStream!);
+        });
       }
     };
+  }
+
+  void _toggleCamera() async {
+    if (_localStream == null) throw Exception('Stream is not initialized');
+
+    final videoTrack = _localStream!
+        .getVideoTracks()
+        .firstWhere((track) => track.kind == 'video');
+    await Helper.switchCamera(videoTrack);
   }
 
   void _initRenderers() async {
@@ -124,11 +136,9 @@ class _CallScreenState extends State<CallScreen> {
       if (message['rejected'] != null) {
         // show call rejected...
       } else if (message['answer'] != null) {
-
-          final RTCSessionDescription remoteDescription =
-              RTCSessionDescription(message['answer'], message['type']);
-          await _peerConnection.setRemoteDescription(remoteDescription);
-
+        final RTCSessionDescription remoteDescription =
+            RTCSessionDescription(message['answer'], message['type']);
+        await _peerConnection.setRemoteDescription(remoteDescription);
       } else if (message['offer'] != null) {
         if (_localStream == null) {
           //ask to continue
@@ -139,17 +149,16 @@ class _CallScreenState extends State<CallScreen> {
         //   _createConnection();
         // }
 
-          final RTCSessionDescription remoteDescription =
-              RTCSessionDescription(message['offer'], message['type']);
-          await _peerConnection.setRemoteDescription(remoteDescription);
-          final answer = await _peerConnection.createAnswer();
-          await _peerConnection.setLocalDescription(answer);
-          socket.emit('connection', {
-            'username': widget.user,
-            'answer': answer.sdp,
-            'type': answer.type
-          });
-
+        final RTCSessionDescription remoteDescription =
+            RTCSessionDescription(message['offer'], message['type']);
+        await _peerConnection.setRemoteDescription(remoteDescription);
+        final answer = await _peerConnection.createAnswer();
+        await _peerConnection.setLocalDescription(answer);
+        socket.emit('connection', {
+          'username': widget.user,
+          'answer': answer.sdp,
+          'type': answer.type
+        });
       } else if (message['candidate'] != null) {
         // if (_peerConnection == null) {
         //   _createConnection();
@@ -172,6 +181,17 @@ class _CallScreenState extends State<CallScreen> {
           IconButton(
             icon: Icon(voice ? Icons.mic : Icons.mic_off),
             onPressed: () {
+              if (voice) {
+                var track = _localStream?.getAudioTracks();
+                track?.forEach((element) {
+                  element.enabled = false;
+                });
+              } else {
+                var track = _localStream?.getAudioTracks();
+                track?.forEach((element) {
+                  element.enabled = true;
+                });
+              }
               setState(() {
                 voice = !voice;
               });
@@ -180,6 +200,17 @@ class _CallScreenState extends State<CallScreen> {
           IconButton(
             icon: Icon(video ? Icons.videocam : Icons.videocam_off),
             onPressed: () {
+              if (video) {
+                var track = _localStream?.getVideoTracks();
+                track?.forEach((element) {
+                  element.enabled = false;
+                });
+              } else {
+                var track = _localStream?.getVideoTracks();
+                track?.forEach((element) {
+                  element.enabled = true;
+                });
+              }
               setState(() {
                 video = !video;
               });
@@ -202,6 +233,7 @@ class _CallScreenState extends State<CallScreen> {
             icon:
                 Icon(back ? Icons.video_camera_back : Icons.video_camera_front),
             onPressed: () {
+              _toggleCamera();
               setState(() {
                 back = !back;
               });

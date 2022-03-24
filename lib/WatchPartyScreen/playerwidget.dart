@@ -93,6 +93,9 @@ class _PlayerState extends State<Player> {
           // DateTime d = DateTime.parse(data['time']);
           // Timer(d.difference(DateTime.now()), () => controller.play());
         } else if (data['eve'] == 'pause') {
+          () {
+            controller.seekTo(data['time']);
+          };
           controller.pause();
           setState(() {
             play = !play;
@@ -160,7 +163,7 @@ class _PlayerState extends State<Player> {
                         socket.emit('event', {
                           'username': widget.username,
                           'eve': 'pause',
-                          //'time': controller.value
+                          'time': controller.value
                         });
                         controller.pause();
                       } else {
