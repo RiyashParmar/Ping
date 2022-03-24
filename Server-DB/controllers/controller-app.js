@@ -205,7 +205,7 @@ exports.confirmOtp = async (req, res, next) => {
         if (rs) {
             if (Date.now() > rs.expiry.getTime() + 600) {
                 var b = await user.findOne({ loginkey: loginkey, number: number });
-                var room = await user.deleteOne({ loginkey: loginkey, number: number }); /// also delete their dp...
+                var room = await user.deleteOne({ loginkey: loginkey, number: number });
                 if (room.deletedCount > 0) {
                     fs.unlinkSync(b.dp);
                     res.sendStatus(200);
@@ -347,6 +347,167 @@ exports.refreshChatroom = async (req, res, next) => {
     }
 }
 
+exports.editDescription = async (req, res, next) => {
+    try {
+        var createdby = req.body.createdby;
+        var _id = req.body._id;
+        var description = req.body.description;
+        var room = await chatroom.findOne({ _id: _id, createdby: createdby });
+        if (room) {
+            room = await chatroom.updateOne({ _id: _id, createdby: createdby }, { description: description });
+            if (room.modifiedCount > 0) {
+                res.sendStatus(200);
+            } else {
+                res.sendStatus(500);
+            }
+        } else {
+            res.sendStatus(404);
+        }
+    } catch (error) {
+        console.log(error);
+        res.sendStatus(500);
+    }
+}
+
+exports.addMembers = async (req, res, next) => {
+    try {
+        const socket = req.app.get('socket');
+        const connectedClients = req.app.get('connectedClients');
+        const Todo = req.app.get('Todo');
+        var createdby = req.body.createdby;
+        var _id = req.body._id;
+        var username = req.body.username;
+        var room = await chatroom.findOne({ _id: _id, createdby: createdby });
+        if (room) {
+            var _room = await chatroom.updateOne({ _id: _id, createdby: createdby }, { $push: { members: username } });
+            if (_room.modifiedCount > 0) {
+                var user = await user.updateOne({ username: username }, { $push: { chatrooms: _id } });
+                if (user.modifiedCount > 0) {
+                    if (room.type == 'group') {
+                        room.dp = fs.readFileSync(room.dp, 'base64');
+                        var chk = 0;
+                        for (let i = 0; i < connectedClients.length; i++) {
+                            if (connectedClients[i]['username'] == username) {
+                                socket.to(connectedClients[i]['username']).emit('newroom', room);
+                                res.sendStatus(200);
+                                break;
+                            } else if (i == connectedClients.length - 1 && chk == 0) {
+                                Todo.push('newroom', username, room);
+                                res.sendStatus(200);
+                            }
+                        }
+                    } else {
+                        res.sendStatus(200);
+                    }
+                } else {
+                    await chatroom.updateOne({ _id: _id, createdby: createdby }, { $pull: { members: username } });
+                    res.sendStatus(500);
+                }
+            } else {
+                res.sendStatus(500);
+            }
+        } else {
+            res.sendStatus(404);
+        }
+    } catch (error) {
+        console.log(error);
+        res.sendStatus(500);
+    }
+}
+
+exports.editDp = async (req, res, next) => {
+    try {
+        var createdby = req.body.createdby;
+        var _id = req.body._id;
+        var dp = req.body.dp;
+        var room = await chatroom.findOne({ _id: _id, createdby: createdby });
+        if (room) {
+            fs.unlinkSync(room.dp);
+            const buffer = Buffer.from(dp, "base64");
+            room.dp = '/Users/nik9/Documents/projects/Ping/App/Android/ping/Server-DB/imgs/' + room.name + '.jpg';
+            fs.writeFileSync(room.dp, buffer);
+            room = await chatroom.updateOne({ _id: _id, createdby: createdby }, { dp: room.dp });
+            if (room.modifiedCount > 0) {// check.....
+                res.sendStatus(200);
+            } else {
+                res.sendStatus(500);
+            }
+        } else {
+            res.sendStatus(404);
+        }
+    } catch (error) {
+        console.log(error);
+        res.sendStatus(500);
+    }
+}
+
+exports.editGroupName = async (req, res, next) => {
+    try {
+        var createdby = req.body.createdby;
+        var _id = req.body._id;
+        var name = req.body.name;
+        var room = await chatroom.findOne({ _id: _id, createdby: createdby });
+        if (room) {
+            room = await chatroom.updateOne({ _id: _id, createdby: createdby }, { name: name });
+            if (room.modifiedCount > 0) {
+                res.sendStatus(200);
+            } else {
+                res.sendStatus(500);
+            }
+        } else {
+            res.sendStatus(404);
+        }
+    } catch (error) {
+        console.log(error);
+        res.sendStatus(500);
+    }
+}
+
+exports.removeMember = async (req, res, next) => {
+    try {
+        const socket = req.app.get('socket');
+        const connectedClients = req.app.get('connectedClients');
+        const Todo = req.app.get('Todo');
+        var createdby = req.body.createdby;
+        var _id = req.body._id;
+        var username = req.body.username;
+        var room = await chatroom.findOne({ _id: _id, createdby: createdby });
+        if (room) {
+            var _room = await chatroom.updateOne({ _id: _id, createdby: createdby }, { $pull: { members: username } });
+            if (_room.modifiedCount > 0) {
+                var user = user.updateOne({ username: username }, { $pull: { chatrooms: _id } });
+                if (user.modifiedCount > 0) {
+                    if (room.type == 'group') {
+                        var chk = 0;
+                        for (let i = 0; i < connectedClients.length; i++) {
+                            if (connectedClients[i]['username'] == username) {
+                                socket.to(connectedClients[i]['username']).emit('deleteroom', { '_id': room._id });
+                                res.sendStatus(200);
+                                break;
+                            } else {
+                                Todo.push('deleteroom', username, room);
+                                res.sendStatus(200);
+                            }
+                        }
+                    } else {
+                        res.sendStatus(200);
+                    }
+                } else {
+                    room.updateOne({ _id: _id, createdby: createdby }, { $push: { members: username } });
+                    res.sendStatus(500);
+                }
+            } else {
+                res.sendStatus(500);
+            }
+        } else {
+            res.sendStatus(404);
+        }
+    } catch (error) {
+        console.log(error);
+        res.sendStatus(500);
+    }
+}
+
 exports.leaveChatroom = async (req, res, next) => {
     try {
         var id = req.body.id;
@@ -363,15 +524,6 @@ exports.leaveChatroom = async (req, res, next) => {
         } else {
             res.sendStatus(500);
         }
-    } catch (error) {
-        console.log(error);
-        res.sendStatus(500);
-    }
-}
-
-exports.startParty = async (req, res, next) => {
-    try {
-
     } catch (error) {
         console.log(error);
         res.sendStatus(500);

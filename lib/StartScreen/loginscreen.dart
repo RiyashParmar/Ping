@@ -6,6 +6,7 @@ import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../HomeScreen/homescreen.dart';
 import '../models/chatroom.dart';
@@ -178,8 +179,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           });
                           var res = await _loginAuth();
                           if (res.statusCode == 200) {
-                            //var key = await SharedPreferences.getInstance();
-                            //key.setBool('Login', true);
+                            var key = await SharedPreferences.getInstance();
+                            key.setBool('Login', true);
                             var user = json.decode(res.body)['data'];
                             for (var item in user['chatrooms']) {
                               var buffer = base64.decode(item['dp']);
@@ -197,6 +198,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 id_: item['_id'],
                                 name: item['name'],
                                 type: item['type'],
+                                createdby: item['createdby'],
                                 dp: dir.path + '/' + item['_id'] + '.jpg',
                                 description: item['description'],
                                 members: members,
@@ -221,7 +223,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             db.myTb.put(mydata);
                             await _requestPermission();
                             Navigator.of(context)
-                                .pushNamed(HomeScreen.routename);
+                                .pushReplacementNamed(HomeScreen.routename);
                           } else if (res.statusCode == 404) {
                             setState(() {
                               _validate = false;

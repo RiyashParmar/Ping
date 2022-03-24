@@ -1,8 +1,11 @@
-// ignore_for_file: must_be_immutable
+// ignore_for_file: must_be_immutable, prefer_typing_uninitialized_variables
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart';
 
 //import 'searchscreen.dart';
 import '../NewConversationScreen/newconversationscreen.dart';
@@ -13,7 +16,8 @@ import '../NewGroupScreen/newgroupscreen.dart';
 import '../WatchPartyScreen/watchpartyscreen.dart';
 
 class BottomBar extends StatefulWidget {
-  const BottomBar({Key? key}) : super(key: key);
+  const BottomBar({Key? key, required this.pop}) : super(key: key);
+  final pop;
   @override
   State<BottomBar> createState() => _BottomBarState();
 }
@@ -72,7 +76,7 @@ class _BottomBarState extends State<BottomBar> {
             Expanded(
               flex: 2,
               child: open
-                  ? Button(update: update, sp: sp)
+                  ? Button(update: update, sp: sp, pop: widget.pop)
                   : SpeedDial(
                       foregroundColor: Theme.of(context).iconTheme.color,
                       backgroundColor: Colors.transparent,
@@ -104,24 +108,37 @@ class _BottomBarState extends State<BottomBar> {
                           },
                         ),
                         SpeedDialChild(
-                          backgroundColor: Theme.of(context).primaryColor,
-                          labelBackgroundColor:
-                              Theme.of(context).backgroundColor == Colors.black
-                                  ? Colors.grey
-                                  : Colors.white,
-                          child: const Icon(
-                            Icons.bug_report,
-                          ),
-                          label: 'Report Problems',
-                          onTap: () {
-                            open = !open;
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (ctx) => h.Report(),
-                              ),
-                            );
-                          },
-                        ),
+                            backgroundColor: Theme.of(context).primaryColor,
+                            labelBackgroundColor:
+                                Theme.of(context).backgroundColor ==
+                                        Colors.black
+                                    ? Colors.grey
+                                    : Colors.white,
+                            child: const Icon(
+                              Icons.volume_up,
+                            ),
+                            label: 'New Broadcast',
+                            onTap: () {
+                              open = !open;
+                              Navigator.of(context)
+                                  .pushNamed(NewBroadcastScreen.routeName);
+                            }),
+                        SpeedDialChild(
+                            backgroundColor: Theme.of(context).primaryColor,
+                            labelBackgroundColor:
+                                Theme.of(context).backgroundColor ==
+                                        Colors.black
+                                    ? Colors.grey
+                                    : Colors.white,
+                            child: const Icon(
+                              Icons.people,
+                            ),
+                            label: 'New Group',
+                            onTap: () {
+                              open = !open;
+                              Navigator.of(context)
+                                  .pushNamed(NewGroupScreen.routeName);
+                            }),
                         /*SpeedDialChild(
                           backgroundColor: Theme.of(context).primaryColor,
                           labelBackgroundColor:
@@ -141,24 +158,7 @@ class _BottomBarState extends State<BottomBar> {
                             );
                           },
                         ),*/
-                        SpeedDialChild(
-                          backgroundColor: Theme.of(context).primaryColor,
-                          labelBackgroundColor:
-                              Theme.of(context).backgroundColor == Colors.black
-                                  ? Colors.grey
-                                  : Colors.white,
-                          child: const Icon(
-                            Icons.feedback,
-                          ),
-                          label: 'Feedback',
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (ctx) => h.Feedback(),
-                              ),
-                            );
-                          },
-                        ),
+
                         SpeedDialChild(
                           backgroundColor: Theme.of(context).primaryColor,
                           labelBackgroundColor:
@@ -186,10 +186,12 @@ class _BottomBarState extends State<BottomBar> {
 }
 
 class Button extends StatelessWidget {
-  const Button({Key? key, required this.update, required this.sp})
+  const Button(
+      {Key? key, required this.update, required this.sp, required this.pop})
       : super(key: key);
   final VoidCallback update;
   final double sp;
+  final pop;
 
   @override
   Widget build(BuildContext context) {
@@ -215,11 +217,17 @@ class Button extends StatelessWidget {
                   ? Colors.grey
                   : Colors.white,
           child: const Icon(
-            Icons.volume_up,
+            Icons.logout,
           ),
-          label: 'New Broadcast',
-          onTap: () =>
-              Navigator.of(context).pushNamed(NewBroadcastScreen.routeName),
+          label: 'Log-Out',
+          onTap: () async {
+            final dir = await getApplicationDocumentsDirectory();
+            final path = dir.path + '/data.mdb';
+            await File(path).delete();
+            var key = await SharedPreferences.getInstance();
+            key.setBool('Login', false);
+            pop();
+          },
         ),
         SpeedDialChild(
           backgroundColor: Theme.of(context).primaryColor,
@@ -228,11 +236,34 @@ class Button extends StatelessWidget {
                   ? Colors.grey
                   : Colors.white,
           child: const Icon(
-            Icons.people,
+            Icons.feedback,
           ),
-          label: 'New Group',
-          onTap: () =>
-              Navigator.of(context).pushNamed(NewGroupScreen.routeName),
+          label: 'Feedback',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (ctx) => h.Feedback(),
+              ),
+            );
+          },
+        ),
+        SpeedDialChild(
+          backgroundColor: Theme.of(context).primaryColor,
+          labelBackgroundColor:
+              Theme.of(context).backgroundColor == Colors.black
+                  ? Colors.grey
+                  : Colors.white,
+          child: const Icon(
+            Icons.bug_report,
+          ),
+          label: 'Report Problems',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (ctx) => h.Report(),
+              ),
+            );
+          },
         ),
         /*SpeedDialChild(
           backgroundColor: Theme.of(context).primaryColor,

@@ -1,6 +1,10 @@
+// ignore_for_file: unnecessary_null_comparison
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 import '../main.dart';
 
@@ -15,17 +19,51 @@ class _PlayerState extends State<Player> {
   YoutubePlayerController controller = YoutubePlayerController(
       initialVideoId: 'S0NwPJBn1vY',
       flags: const YoutubePlayerFlags(autoPlay: false, hideControls: true));
+  late final RTCPeerConnection peerConnection;
+
   late TextEditingController _controller1;
   late TextEditingController _controller2;
   final GlobalKey<FormFieldState> _key = GlobalKey();
+
   List<String> msgs = [];
   bool voice = false;
   bool play = false;
   bool init = true;
 
+  var iceServers = {
+    'servers': [
+      {'url': 'stun:stun.l.google.com:19302'},
+      {'url': 'stun:stun1.l.google.com:19302'},
+      {'url': 'stun:stun2.l.google.com:19302'},
+      {'url': 'stun:stun3.l.google.com:19302'},
+      {'url': 'stun:stun4.l.google.com:19302'},
+    ]
+  };
+
+  void createoffer() async {
+    final offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+    socket.emit('connection', {'offer': json.encode(offer.toMap())});
+  }
+
+  void createConnection() async {
+    peerConnection = await createPeerConnection(iceServers);
+
+    peerConnection.onIceCandidate = (event) {
+      if (event.candidate != null) {
+        socket.emit('connection', {'iceCandidate': event.candidate});
+      }
+    };
+
+    peerConnection.onRenegotiationNeeded = () {
+      createoffer();
+    };
+  }
+
   @override
   void initState() {
     super.initState();
+    createConnection();
     _controller1 = TextEditingController();
     _controller2 = TextEditingController();
   }
@@ -70,6 +108,33 @@ class _PlayerState extends State<Player> {
           });
         }
       });
+
+      socket.on(
+        'connection',
+        (message) async {
+          if (message.offer) {
+            if (peerConnection == null) {
+              createConnection();
+            }
+            final RTCSessionDescription remoteDescription =
+                RTCSessionDescription(json.decode(message.offer), 'offer');
+            await peerConnection.setRemoteDescription(remoteDescription);
+            final answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+            socket.emit('connection', {'answer': json.encode(answer)});
+          } else if (message.answer) {
+            final RTCSessionDescription remoteDescription =
+                RTCSessionDescription(json.decode(message.answer), 'answer');
+            await peerConnection.setRemoteDescription(remoteDescription);
+          } else if (message.iceCandidate) {
+            if (peerConnection == null) {
+              createConnection();
+            } else {
+              await peerConnection.addCandidate(message.iceCandidate);
+            }
+          }
+        },
+      );
     }
 
     return Scaffold(
@@ -280,6 +345,9 @@ class _PlayerState extends State<Player> {
                             ? const Icon(Icons.mic)
                             : const Icon(Icons.mic_off),
                         onPressed: () {
+                          if (voice) {
+                            peerConnection.close();
+                          } else {}
                           setState(() {
                             voice = !voice;
                           });

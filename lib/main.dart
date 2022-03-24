@@ -60,7 +60,7 @@ s.Socket socket = s.io(
 
 Future<bool> login() async {
   var key = await SharedPreferences.getInstance();
-  key.setBool('Login', false); // testing reomve later....
+  //key.setBool('Login', false); // testing reomve later....
   return key.getBool('Login') ?? false;
 }
 

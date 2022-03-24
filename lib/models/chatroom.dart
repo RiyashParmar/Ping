@@ -9,6 +9,7 @@ class ChatRoom {
   String id_;
   String name;
   String type;
+  String createdby;
   String dp;
   String description;
   List<String> members;
@@ -19,6 +20,7 @@ class ChatRoom {
     required this.id_,
     required this.name,
     required this.type,
+    required this.createdby,
     required this.dp,
     required this.description,
     required this.members,
@@ -31,6 +33,12 @@ class ChatRooms with ChangeNotifier {
 
   void refreshRoom(ChatRoom room) {
     _chatrooms.removeWhere((element) => element.id == room.id);
+    for (var item in _chatrooms) {
+      if (item.id == room.id) {
+        _chatrooms.remove(item);
+        break;
+      }
+    }
     _chatrooms.add(room);
     notifyListeners();
   }
@@ -53,6 +61,7 @@ class ChatRooms with ChangeNotifier {
       id_: room.id_,
       name: room.name,
       type: room.type,
+      createdby: room.createdby,
       dp: room.dp,
       description: room.description,
       members: room.members,
@@ -76,6 +85,7 @@ class ChatRooms with ChangeNotifier {
       id_: a.id_,
       name: a.name,
       type: a.type,
+      createdby: a.createdby,
       dp: a.dp,
       description: a.description,
       members: a.members,
@@ -94,6 +104,7 @@ class ChatRooms with ChangeNotifier {
         id_: _chatrooms[i].id_,
         name: _chatrooms[i].name,
         type: _chatrooms[i].type,
+        createdby: _chatrooms[i].createdby,
         dp: _chatrooms[i].dp,
         description: _chatrooms[i].description,
         members: _chatrooms[i].members,

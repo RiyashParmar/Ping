@@ -304,6 +304,7 @@ class _BroadcastState extends State<Broadcast> {
                       id_: id,
                       name: _controller1.text.trim(),
                       type: 'broadcast',
+                      createdby: me.username,
                       dp: dp,
                       description: _controller2.text.trim(),
                       members: members(widget.user),

@@ -3,7 +3,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:provider/provider.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../StartScreen/loginscreen.dart';
 import '../models/mydata.dart';
 
 import 'profilewidget.dart';
@@ -183,6 +186,30 @@ class SettingsScreen extends StatelessWidget {
             subtitle: const Text('Spread the word'),
             onTap: () {
               Share.share('Hey use these amazing app');
+            },
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.only(
+              top: sp * 0.01,
+              left: sp * 0.05,
+              right: sp * 0.02,
+              bottom: sp * 0.01,
+            ),
+            leading: const Icon(Icons.logout),
+            title: Text(
+              'Log-Out',
+              style: TextStyle(
+                fontSize: sp * 0.025,
+              ),
+            ),
+            subtitle: const Text('Log out from the account'),
+            onTap: () async {
+              final dir = await getApplicationDocumentsDirectory();
+              final path = dir.path + '/data.mdb';
+              await File(path).delete();
+              var key = await SharedPreferences.getInstance();
+              key.setBool('Login', false);
+              Navigator.of(context).pushReplacementNamed(LoginScreen.routeName);
             },
           ),
         ],

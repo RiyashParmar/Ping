@@ -32,7 +32,8 @@ class CallingScreen extends StatelessWidget {
       socket.on('call', (data) {
         if (data['ans'] == '1') {
           player.stop();
-          Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (ctx) {
+          Navigator.of(context)
+              .pushReplacement(MaterialPageRoute(builder: (ctx) {
             return CallScreen(user: user.username, mode: true);
           }));
         } else {
@@ -90,7 +91,7 @@ class CallingScreen extends StatelessWidget {
                           player.stop();
                           Navigator.of(context).pop();
                         },
-                      ), 
+                      ),
                       FloatingActionButton(
                         heroTag: 2,
                         child: const Icon(Icons.call),
@@ -98,8 +99,8 @@ class CallingScreen extends StatelessWidget {
                           socket.emit(
                               'call', {'username': user.username, 'ans': '1'});
                           player.stop();
-                          Navigator.of(context)
-                              .pushReplacement(MaterialPageRoute(builder: (ctx) {
+                          Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(builder: (ctx) {
                             return CallScreen(user: user.username, mode: false);
                           }));
                         },

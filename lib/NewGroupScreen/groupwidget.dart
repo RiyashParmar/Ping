@@ -191,6 +191,8 @@ class _GroupState extends State<Group> {
                               validator: (value) {
                                 if (value!.trim().length > 50) {
                                   return 'Keep it inside 50 characters';
+                                } else if (value.trim().isEmpty) {
+                                  return 'Enter some name';
                                 } else {
                                   return null;
                                 }
@@ -307,6 +309,7 @@ class _GroupState extends State<Group> {
                       id_: id,
                       name: _controller1.text.trim(),
                       type: 'group',
+                      createdby: me.username,
                       dp: dp,
                       description: _controller2.text.trim(),
                       members: members(widget.user),

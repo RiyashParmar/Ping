@@ -1874,8 +1874,8 @@ class _DeleteState extends State<Delete> {
                                 await getApplicationDocumentsDirectory();
                             final path = dir.path + '/data.mdb';
                             await File(path).delete();
-                            //var key = await SharedPreferences.getInstance();
-                            //key.setBool('Login', false);
+                            var key = await SharedPreferences.getInstance();
+                            key.setBool('Login', false);
                             Navigator.of(context)
                                 .popUntil(ModalRoute.withName('/'));
                           } else if (res == 404) {

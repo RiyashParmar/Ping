@@ -26,10 +26,18 @@ router.post('/app/feedback', appController.feedback);
 
 router.post('/app/createChatroom', appController.createChatroom);
 
-router.post('/app/updateChatroom', appController.refreshChatroom);
+router.post('/app/editDescription', appController.editDescription);
+
+router.post('/app/addMembers', appController.addMembers);
+
+router.post('/app/editDp', appController.editDp);
+
+router.post('/app/editGroupName', appController.editGroupName);
+
+router.post('/app/removeMember', appController.removeMember);
 
 router.post('/app/leaveChatroom', appController.leaveChatroom);
 
-router.post('/app/startParty', appController.startParty);
+router.post('/app/refreshChatroom', appController.refreshChatroom);
 
 exports.routes = router;

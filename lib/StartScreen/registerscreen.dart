@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-//import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -687,8 +687,9 @@ class ConfirmIdstate extends State<ConfirmId> {
                                 if (_formKey.currentState!.validate()) {
                                   var res = await _registerUser();
                                   if (res.statusCode == 200) {
-                                    //var key = await SharedPreferences.getInstance();
-                                    //key.setBool('Login', true);
+                                    var key =
+                                        await SharedPreferences.getInstance();
+                                    key.setBool('Login', true);
                                     await _requestPermission();
                                     final mydata = MyData(
                                       username: _controller2.text,
@@ -706,8 +707,8 @@ class ConfirmIdstate extends State<ConfirmId> {
                                         }),
                                       ),
                                     );*/
-                                    Navigator.of(context)
-                                        .pushNamed(HomeScreen.routename);
+                                    Navigator.of(context).pushReplacementNamed(
+                                        HomeScreen.routename);
                                   } else {
                                     Navigator.of(context).pop();
                                     ScaffoldMessenger.of(context)

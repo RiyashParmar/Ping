@@ -1,12 +1,6 @@
-// ignore_for_file: must_be_immutable, unnecessary_null_comparison
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
-// import 'package:provider/provider.dart';
 
-// import '../models/user.dart';
-// import '../models/mydata.dart';
 import '../main.dart';
 
 class CallScreen extends StatefulWidget {
@@ -19,9 +13,7 @@ class CallScreen extends StatefulWidget {
 }
 
 class _CallScreenState extends State<CallScreen> {
-  late final RTCPeerConnection peerConnection;
-  //late final RTCDataChannel dataChannel;
-
+  late RTCPeerConnection _peerConnection;
   final _localRenderer = RTCVideoRenderer();
   final _remoteRenderer = RTCVideoRenderer();
 
@@ -30,10 +22,10 @@ class _CallScreenState extends State<CallScreen> {
 
   final key = GlobalKey();
 
-  bool inCalling = false;
   bool video = true;
   bool voice = true;
   bool back = true;
+  bool check = true;
 
   var iceServers = {
     'servers': [
@@ -45,7 +37,7 @@ class _CallScreenState extends State<CallScreen> {
     ]
   };
 
-  void getUserMedia() async {
+  void _getUserMedia() async {
     final Map<String, dynamic> mediaConstraints = {
       'audio': true,
       'video': {
@@ -55,61 +47,58 @@ class _CallScreenState extends State<CallScreen> {
     _localStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
     _localRenderer.srcObject = null;
     _localRenderer.srcObject = _localStream;
+    _localStream!.getTracks().forEach((track) {
+      _peerConnection.addTrack(track, _localStream!);
+    });
     setState(() {});
   }
 
-  void createoffer() async {
-    final offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(offer);
+  void _createoffer() async {
+    final offer = await _peerConnection.createOffer();
+    await _peerConnection.setLocalDescription(offer);
     socket.emit('connection',
-        {'username': widget.user, 'offer': json.encode(offer.toMap())});
+        {'username': widget.user, 'offer': offer.sdp, 'type': offer.type});
   }
 
-  void createConnection() async {
-    peerConnection = await createPeerConnection(iceServers);
+  void _createConnection() async {
+    _peerConnection = await createPeerConnection(iceServers);
 
-    peerConnection.onIceCandidate = (event) {
-      print('----------------------------------------------');
+    _peerConnection.onIceCandidate = (event) {
       if (event.candidate != null) {
-        socket.emit('connection',
-            {'username': widget.user, 'iceCandidate': event.candidate});
+        socket.emit(
+          'connection',
+          {
+            'username': widget.user,
+            'candidate': event.candidate,
+            'sdpMid': event.sdpMid,
+            'sdpMLineIndex': event.sdpMLineIndex
+          },
+        );
       }
     };
 
-    peerConnection.onRenegotiationNeeded = () {
-      createoffer();
+    //widget.mode ? _createoffer() : null;
+
+    _peerConnection.onRenegotiationNeeded = () {
+      _createoffer();
     };
 
-    peerConnection.onTrack = (event) {
-      _remoteStream!.addTrack(event.track);
+    _peerConnection.onTrack = (event) {
+      _remoteStream?.addTrack(event.track);
       _remoteRenderer.srcObject = null;
       _remoteRenderer.srcObject = _remoteStream;
       setState(() {});
     };
 
-    if (_localStream != null) {
-      _localStream!.getTracks().forEach((track) {
-        peerConnection.addTrack(track, _remoteStream as MediaStream);
-      });
-    }
+    _peerConnection.onConnectionState = (event) {
+      if (event == ConnectionState.done) {
+        print(
+            '------------------------------------------------------------------------------------');
+      }
+    };
   }
 
-  // void _toggleCamera() async {
-  //   if (_localStream == null) throw Exception('Stream is not initialized');
-
-  //   final videoTrack = _localStream!
-  //       .getVideoTracks()
-  //       .firstWhere((track) => track.kind == 'video');
-  //   await Helper.switchCamera(videoTrack);
-  // }
-
-  hangUp() async {
-    await _localStream!.dispose();
-    _localRenderer.srcObject = null;
-    inCalling = false;
-  }
-
-  initRenderers() async {
+  void _initRenderers() async {
     await _localRenderer.initialize();
     await _remoteRenderer.initialize();
   }
@@ -117,17 +106,14 @@ class _CallScreenState extends State<CallScreen> {
   @override
   void initState() {
     super.initState();
-    getUserMedia();
-    initRenderers();
+    _initRenderers();
+    _getUserMedia();
+    _createConnection();
   }
 
   @override
   void dispose() {
     super.dispose();
-    if (inCalling) {
-      hangUp();
-    }
-    hangUp();
     _localRenderer.dispose();
     _remoteRenderer.dispose();
   }
@@ -135,38 +121,44 @@ class _CallScreenState extends State<CallScreen> {
   @override
   Widget build(BuildContext context) {
     socket.on('connection', (message) async {
-      //print('Connect: ${socket.id}');
-      if (message['rejected']) {
+      if (message['rejected'] != null) {
         // show call rejected...
-      } else if (message['answer']) {
-        final RTCSessionDescription remoteDescription =
-            RTCSessionDescription(json.decode(message.answer), 'answer');
-        await peerConnection.setRemoteDescription(remoteDescription);
-      } else if (message['offer']) {
+      } else if (message['answer'] != null) {
+
+          final RTCSessionDescription remoteDescription =
+              RTCSessionDescription(message['answer'], message['type']);
+          await _peerConnection.setRemoteDescription(remoteDescription);
+
+      } else if (message['offer'] != null) {
         if (_localStream == null) {
           //ask to continue
-          getUserMedia();
+          _getUserMedia();
           // if no then- socket.emit('connection', {'rejected':true});
         }
-        if (peerConnection == null) {
-          createConnection();
-        }
-        final RTCSessionDescription remoteDescription =
-            RTCSessionDescription(json.decode(message.offer), 'offer');
-        await peerConnection.setRemoteDescription(remoteDescription);
-        final answer = await peerConnection.createAnswer();
-        await peerConnection.setLocalDescription(answer);
-        socket.emit('connection',
-            {'username': widget.user, 'answer': json.encode(answer)});
-      } else if (message['iceCandidate']) {
-        if (peerConnection == null) {
-          createConnection();
-        }
-        await peerConnection.addCandidate(message.iceCandidate);
+        // if (_peerConnection == null) {
+        //   _createConnection();
+        // }
+
+          final RTCSessionDescription remoteDescription =
+              RTCSessionDescription(message['offer'], message['type']);
+          await _peerConnection.setRemoteDescription(remoteDescription);
+          final answer = await _peerConnection.createAnswer();
+          await _peerConnection.setLocalDescription(answer);
+          socket.emit('connection', {
+            'username': widget.user,
+            'answer': answer.sdp,
+            'type': answer.type
+          });
+
+      } else if (message['candidate'] != null) {
+        // if (_peerConnection == null) {
+        //   _createConnection();
+        // }
+        RTCIceCandidate iceCandidate = RTCIceCandidate(
+            message['candidate'], message['sdpMid'], message['sdpMLineIndex']);
+        await _peerConnection.addCandidate(iceCandidate);
       }
     });
-
-    widget.mode ? createConnection() : null;
 
     final appBar = AppBar(
       title: Text(video ? 'Video Call' : 'Voice Call'),

@@ -10,6 +10,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../WatchPartyScreen/playerwidget.dart';
 import '../NotificationService/notificationservice.dart';
 import '../ConversationScreen/callingscreen.dart';
+import '../StartScreen/loginscreen.dart';
 import '../models/user.dart';
 import '../models/chatroom.dart';
 import '../models/mydata.dart';
@@ -35,6 +36,10 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   AppLifecycleState appLifecycleState = AppLifecycleState.resumed;
   bool init = true;
+
+  void pop() {
+    Navigator.of(context).pushReplacementNamed(LoginScreen.routeName);
+  }
 
   List<User> moment(users) {
     List<User> a = [];
@@ -325,6 +330,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           id_: data['_id'],
           name: data['name'],
           type: data['type'],
+          createdby: data['createdby'],
           dp: dir.path + '/' + data['_id'] + '.jpg',
           description: data['description'],
           members: members,
@@ -340,6 +346,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               1, data['sender'], 'New room', platformChannelSpecifics,
               payload: '');
         }
+      });
+
+      socket.on('deleteroom', (data) {
+        var _id = data['_id'];
+        Query<ChatRoom> query =
+            db.chatroomTb.query(ChatRoom_.id.equals(_id)).build();
+        ChatRoom? room = query.findUnique();
+        query.close();
+        chatroom.deleteRoom(room!);
       });
 
       socket.on('startparty', (data) async {
@@ -379,14 +394,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         );
       });
 
-      socket.on('call', (data) async { 
+      socket.on('call', (data) async {
         var callee = data['callee'];
         Future selectNotification(String? payload) async {
           //Handle notification tapped logic here
-          Query<User> query = 
-            db.userTb.query(User_.username.equals(data['callee'])).build();
-        User? a = query.findUnique();
-        query.close();
+          Query<User> query =
+              db.userTb.query(User_.username.equals(data['callee'])).build();
+          User? a = query.findUnique();
+          query.close();
           Navigator.of(context).push(MaterialPageRoute(builder: (ctx) {
             return CallingScreen(user: a!, mode: true);
           }));
@@ -461,7 +476,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   ),
                 ),
               ),
-              const BottomBar(),
+              BottomBar(pop: pop),
             ],
           ),
         ),

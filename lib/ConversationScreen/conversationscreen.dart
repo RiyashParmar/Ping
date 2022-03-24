@@ -110,7 +110,8 @@ class _ConversationScreenState extends State<ConversationScreen> {
         IconButton(
           icon: const Icon(Icons.videocam),
           onPressed: () {
-            socket.emit('call',{'username':user.username,'callee': my.getMe.username});
+            socket.emit('call',
+                {'username': user.username, 'callee': my.getMe.username});
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (ctx) => CallingScreen(user: user, mode: false),
