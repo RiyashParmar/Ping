@@ -73,7 +73,6 @@ exports.registerNewUser = async (req, res, next) => {
         var name = req.body.name;
         var username = req.body.username;
         var number = req.body.number;
-        var face_struct = req.body.face_struct;
         var dp = req.body.dp;
         var bio = req.body.bio;
 
@@ -81,7 +80,7 @@ exports.registerNewUser = async (req, res, next) => {
         dp = '/Users/nik9/Documents/projects/Ping/App/Android/ping/Server-DB/imgs/' + username + '.jpg';
         fs.writeFileSync(dp, buffer);
 
-        const User = user({ name: name, username: username, number: number, loginkey: loginkey, face_struct: face_struct, dp: dp, bio: bio, chatrooms: [] });
+        const User = user({ name: name, username: username, number: number, loginkey: loginkey, dp: dp, bio: bio, chatrooms: [] });
         if (await User.save()) {
             res.sendStatus(200);
         } else {

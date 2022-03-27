@@ -12,9 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 
 import '../models/mydata.dart';
-
-String ip = 'http://192.168.43.62:3000';
-//String ip = 'http://10.0.2.2:3000';
+import '../main.dart' as m;
 
 class General extends StatefulWidget {
   const General({Key? key}) : super(key: key);
@@ -370,7 +368,7 @@ class _LoginKeyState extends State<LoginKey> {
   var me;
 
   Future<http.Response> _editLoginkey() async {
-    var url = Uri.parse(ip + '/app/editLoginkey');
+    var url = Uri.parse(m.ip + 'app/editLoginkey');
     var response = await http.post(
       url,
       body: {
@@ -383,7 +381,7 @@ class _LoginKeyState extends State<LoginKey> {
   }
 
   Future<int> _confirmLoginkey() async {
-    var url = Uri.parse(ip + '/app/confirmLoginkey');
+    var url = Uri.parse(m.ip + 'app/confirmLoginkey');
     var response = await http.post(
       url,
       body: {
@@ -628,7 +626,7 @@ class _RecoveryState extends State<Recovery> {
   bool done = false;
 
   Future<int> _confirmNumber() async {
-    var url = Uri.parse(ip + '/login/confirmNumber');
+    var url = Uri.parse(m.ip + 'login/confirmNumber');
     var response = await http.post(
       url,
       body: {
@@ -640,7 +638,7 @@ class _RecoveryState extends State<Recovery> {
   }
 
   Future<int> _confirmOtp() async {
-    var url = Uri.parse(ip + '/login/confirmOtp');
+    var url = Uri.parse(m.ip + 'login/confirmOtp');
     var response = await http.post(
       url,
       body: {
@@ -652,7 +650,7 @@ class _RecoveryState extends State<Recovery> {
   }
 
   Future<http.Response> _checkLoginkey() async {
-    var url = Uri.parse(ip + '/register/checkLoginkey');
+    var url = Uri.parse(m.ip + 'register/checkLoginkey');
     var response = await http.post(
       url,
       body: {'loginkey': _controller4.text},
@@ -661,7 +659,7 @@ class _RecoveryState extends State<Recovery> {
   }
 
   Future<int> _changeLoginkey() async {
-    var url = Uri.parse(ip + '/login/changeLoginkey');
+    var url = Uri.parse(m.ip + 'login/changeLoginkey');
     var response = await http.post(
       url,
       body: {
@@ -1621,7 +1619,7 @@ class _DeleteState extends State<Delete> {
   bool otp = false;
 
   Future<int> _deleteAccount() async {
-    var url = Uri.parse(ip + '/app/deleteAccount');
+    var url = Uri.parse(m.ip + 'app/deleteAccount');
     var response = await http.post(
       url,
       body: {
@@ -1633,7 +1631,7 @@ class _DeleteState extends State<Delete> {
   }
 
   Future<int> _confirmOtp() async {
-    var url = Uri.parse(ip + '/app/confirmOtp');
+    var url = Uri.parse(m.ip + 'app/confirmOtp');
     var response = await http.post(
       url,
       body: {

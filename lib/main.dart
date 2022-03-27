@@ -33,8 +33,8 @@ import 'models/db.dart';
 import 'models/user.dart';
 import 'models/mydata.dart';
 
-String ip = 'http://192.168.43.62:3000';
-//String ip = 'http://10.0.2.2:3000';
+//String ip = 'https://ping-chat-appp.herokuapp.com/';
+String ip = 'http://192.168.43.62:3000/';
 
 //The Main function the entry point of the app
 Future<void> main() async {

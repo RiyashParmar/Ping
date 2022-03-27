@@ -3,9 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import '../models/mydata.dart';
-
-String ip = 'http://192.168.43.62:3000';
-//String ip = 'http://10.0.2.2:3000';
+import '../main.dart' as m;
 
 class HelpScreen extends StatelessWidget {
   const HelpScreen({Key? key}) : super(key: key);
@@ -91,7 +89,7 @@ class Report extends StatelessWidget {
   final GlobalKey<FormFieldState> _key = GlobalKey();
 
   Future<int> _reportBug(username) async {
-    var url = Uri.parse(ip + '/app/reportBug');
+    var url = Uri.parse(m.ip + 'app/reportBug');
     var response = await http.post(
       url,
       body: {
@@ -194,7 +192,7 @@ class Feedback extends StatelessWidget {
   final GlobalKey<FormFieldState> _key = GlobalKey();
 
   Future<int> _feedback(username) async {
-    var url = Uri.parse(ip + '/app/feedback');
+    var url = Uri.parse(m.ip + 'app/feedback');
     var response = await http.post(
       url,
       body: {

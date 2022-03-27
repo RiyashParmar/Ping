@@ -11,9 +11,6 @@ import '../main.dart';
 
 import 'playerwidget.dart';
 
-String ip = 'http://192.168.43.62:3000';
-//String ip = 'http://10.0.2.2:3000';
-
 class WatchPartyScreen extends StatefulWidget {
   const WatchPartyScreen({Key? key}) : super(key: key);
   static const routeName = '/WatchParty';

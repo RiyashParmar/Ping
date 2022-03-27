@@ -12,9 +12,7 @@ import '../ChatRoomScreen/chatroomscreen.dart';
 import '../HomeScreen/homescreen.dart';
 import '../models/mydata.dart';
 import '../models/chatroom.dart';
-
-String ip = 'http://192.168.43.62:3000';
-//String ip = 'http://10.0.2.2:3000';
+import '../main.dart' as m;
 
 class Group extends StatefulWidget {
   const Group({Key? key, required this.user}) : super(key: key);
@@ -36,7 +34,7 @@ class _GroupState extends State<Group> {
     List<int> imageBytes = image.readAsBytesSync();
     String _dp = base64.encode(imageBytes);
 
-    var url = Uri.parse(ip + '/app/createChatroom');
+    var url = Uri.parse(m.ip + 'app/createChatroom');
     var response = await http.post(
       url,
       body: {

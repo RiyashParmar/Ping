@@ -10,10 +10,7 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import '../models/mydata.dart';
-import '../main.dart';
-
-String ip = 'http://192.168.43.62:3000';
-//String ip = 'http://10.0.2.2:3000';
+import '../main.dart' as m;
 
 class Profile extends StatefulWidget {
   const Profile({Key? key}) : super(key: key);
@@ -161,7 +158,7 @@ class _EditProfileState extends State<EditProfile> {
       dp = base64.encode(imageBytes);
     }
 
-    var url = Uri.parse(ip + '/app/editInfo');
+    var url = Uri.parse(m.ip + 'app/editInfo');
     var response = await http.post(
       url,
       body: {
@@ -185,7 +182,7 @@ class _EditProfileState extends State<EditProfile> {
   }
 
   Future<http.Response> _confirmInfo(_username, _number) async {
-    var url = Uri.parse(ip + '/app/confirmInfo');
+    var url = Uri.parse(m.ip + 'app/confirmInfo');
     var response = await http.post(
       url,
       body: {
@@ -479,7 +476,7 @@ class _EditProfileState extends State<EditProfile> {
                                       : widget.me.bio,
                                   moments: widget.me.moments,
                                 );
-                                db.myTb.put(a);
+                                m.db.myTb.put(a);
                                 mydata.init();
 
                                 String dp_ =

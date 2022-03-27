@@ -93,9 +93,9 @@ class _PlayerState extends State<Player> {
           // DateTime d = DateTime.parse(data['time']);
           // Timer(d.difference(DateTime.now()), () => controller.play());
         } else if (data['eve'] == 'pause') {
-          () {
-            controller.seekTo(data['time']);
-          };
+          // () {
+          //   controller.seekTo(data['time']);
+          // };
           controller.pause();
           setState(() {
             play = !play;
@@ -105,6 +105,9 @@ class _PlayerState extends State<Player> {
           String? videoid = YoutubePlayer.convertUrlToId(data['url']);
           controller.load(videoid!);
           controller.pause();
+          setState(() {
+            
+          });
         } else if (data['eve'] == 'msg') {
           setState(() {
             msgs.add(data['msg']);

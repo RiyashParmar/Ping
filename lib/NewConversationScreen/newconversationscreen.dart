@@ -17,10 +17,6 @@ class NewConversationScreen extends StatefulWidget {
   @override
   State<NewConversationScreen> createState() => _NewConversationScreenState();
 }
-
-String ip = 'http://192.168.43.62:3000';
-//String ip = 'http://10.0.2.2:3000';
-
 class _NewConversationScreenState extends State<NewConversationScreen> {
   @override
   Widget build(BuildContext context) {

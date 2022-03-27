@@ -11,12 +11,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../HomeScreen/homescreen.dart';
 import '../models/chatroom.dart';
 import '../models/mydata.dart';
-import '../main.dart';
+import '../main.dart' as m;
 
 import 'registerscreen.dart';
-
-String ip = 'http://192.168.43.62:3000';
-//String ip = 'http://10.0.2.2:3000';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -43,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<http.Response> _loginAuth() async {
-    var url = Uri.parse(ip + '/login');
+    var url = Uri.parse(m.ip + 'login');
     var response = await http.post(
       url,
       body: {
@@ -204,7 +201,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 members: members,
                                 msgs: [],
                               );
-                              db.chatroomTb.put(room);
+                              m.db.chatroomTb.put(room);
                             }
 
                             var buffer = base64.decode(user['dp']);
@@ -220,7 +217,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               bio: user['bio'],
                               moments: [],
                             );
-                            db.myTb.put(mydata);
+                            m.db.myTb.put(mydata);
                             await _requestPermission();
                             Navigator.of(context)
                                 .pushReplacementNamed(HomeScreen.routename);
@@ -300,7 +297,7 @@ class _RecoveryState extends State<Recovery> {
   bool done = false;
 
   Future<int> _confirmNumber() async {
-    var url = Uri.parse(ip + '/login/confirmNumber');
+    var url = Uri.parse(m.ip + 'login/confirmNumber');
     var response = await http.post(
       url,
       body: {
@@ -312,7 +309,7 @@ class _RecoveryState extends State<Recovery> {
   }
 
   Future<int> _confirmOtp() async {
-    var url = Uri.parse(ip + '/login/confirmOtp');
+    var url = Uri.parse(m.ip + 'login/confirmOtp');
     var response = await http.post(
       url,
       body: {
@@ -324,7 +321,7 @@ class _RecoveryState extends State<Recovery> {
   }
 
   Future<http.Response> _checkLoginkey() async {
-    var url = Uri.parse(ip + '/register/checkLoginkey');
+    var url = Uri.parse(m.ip + 'register/checkLoginkey');
     var response = await http.post(
       url,
       body: {'loginkey': _controller4.text},
@@ -333,7 +330,7 @@ class _RecoveryState extends State<Recovery> {
   }
 
   Future<int> _changeLoginkey() async {
-    var url = Uri.parse(ip + '/login/changeLoginkey');
+    var url = Uri.parse(m.ip + 'login/changeLoginkey');
     var response = await http.post(
       url,
       body: {

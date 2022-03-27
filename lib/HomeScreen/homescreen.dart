@@ -23,9 +23,6 @@ import 'bottombarwidget.dart';
 
 import '../objectbox.g.dart';
 
-String ip = 'http://192.168.43.62:3000';
-//String ip = 'http://10.0.2.2:3000';
-
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
   static const routename = '/Home';

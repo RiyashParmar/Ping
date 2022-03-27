@@ -10,11 +10,9 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:ping/models/mydata.dart';
 //import 'package:google_ml_kit/google_ml_kit.dart';
 
-import '../main.dart';
+import '../main.dart' as m;
 import '../HomeScreen/homescreen.dart';
 
-String ip = 'http://192.168.43.62:3000';
-//String ip = 'http://10.0.2.2:3000';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
@@ -37,7 +35,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   var dp = null;
 
   Future<int> _confirmNumber() async {
-    var url = Uri.parse(ip + '/register/sendOtp');
+    var url = Uri.parse(m.ip + 'register/sendOtp');
     var response = await http.post(
       url,
       body: {'number': '+' + code + _controller2.text.trim()},
@@ -411,7 +409,7 @@ class ConfirmIdstate extends State<ConfirmId> {
   bool loginkey = false;
 
   Future<int> _confirmOtp() async {
-    var url = Uri.parse(ip + '/register/confirmOtp');
+    var url = Uri.parse(m.ip + 'register/confirmOtp');
     var response = await http.post(
       url,
       body: {'otp': _controller1.text.trim(), 'number': widget.number.trim()},
@@ -420,7 +418,7 @@ class ConfirmIdstate extends State<ConfirmId> {
   }
 
   Future<http.Response> _checkUsername() async {
-    var url = Uri.parse(ip + '/register/checkUsername');
+    var url = Uri.parse(m.ip + 'register/checkUsername');
     var response = await http.post(
       url,
       body: {'username': _controller2.text.trim()},
@@ -429,7 +427,7 @@ class ConfirmIdstate extends State<ConfirmId> {
   }
 
   Future<http.Response> _checkLoginkey() async {
-    var url = Uri.parse(ip + '/register/checkLoginkey');
+    var url = Uri.parse(m.ip + 'register/checkLoginkey');
     var response = await http.post(
       url,
       body: {'loginkey': _controller3.text.trim()},
@@ -442,7 +440,7 @@ class ConfirmIdstate extends State<ConfirmId> {
     List<int> imageBytes = image.readAsBytesSync();
     String dp = base64.encode(imageBytes);
 
-    var url = Uri.parse(ip + '/register/registerNewUser');
+    var url = Uri.parse(m.ip + 'register/registerNewUser');
     var response = await http.post(
       url,
       body: {
@@ -699,7 +697,7 @@ class ConfirmIdstate extends State<ConfirmId> {
                                       bio: widget.bio,
                                       moments: [],
                                     );
-                                    db.myTb.put(mydata);
+                                    m.db.myTb.put(mydata);
                                     /*Navigator.of(context).push(
                                       MaterialPageRoute(
                                         builder: ((context) {

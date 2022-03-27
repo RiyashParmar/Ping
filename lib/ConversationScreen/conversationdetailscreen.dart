@@ -9,12 +9,9 @@ import 'package:provider/provider.dart';
 
 import '../models/user.dart';
 //import '../models/chatroom.dart';
-import '../main.dart';
+import '../main.dart' as m;
 
 //import 'shareddatascreen.dart';
-
-String ip = 'http://192.168.43.62:3000';
-//String ip = 'http://10.0.2.2:3000';
 
 class ConversationDetailScreen extends StatefulWidget {
   const ConversationDetailScreen({Key? key}) : super(key: key);
@@ -28,7 +25,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
   bool noti = true;
 
   Future<http.Response> _updateUser(User user) async {
-    var url = Uri.parse(ip + '/app/updateUser');
+    var url = Uri.parse(m.ip + 'app/updateUser');
     var response = await http.post(
       url,
       body: {
@@ -73,7 +70,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                 msgs: user.msgs,
                 moments: user.moments,
               );
-              db.userTb.put(_user);
+              m.db.userTb.put(_user);
               users.refreshUser(_user);
               setState(() {});
             } else {

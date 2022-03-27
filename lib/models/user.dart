@@ -9,10 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
 import '../objectbox.g.dart';
-import '../main.dart';
-
-String ip = 'http://192.168.43.62:3000';
-//String ip = 'http://10.0.2.2:3000';
+import '../main.dart' as m;
 
 @Entity()
 class User {
@@ -56,7 +53,7 @@ class Users with ChangeNotifier {
       for (var i = 0; i < cnt.length; i++) {
         contacts.add((cnt[i].phones[0].number).replaceAll(RegExp(r'\s+'), ''));
       }
-      contacts.remove(db.myTb.query().build().findFirst()!.number);
+      contacts.remove(m.db.myTb.query().build().findFirst()!.number);
 
       var a = checkList.length;
       for (var i = 0; i < a; i++) {
@@ -65,10 +62,10 @@ class Users with ChangeNotifier {
           checkList.remove(checkList[i]);
         } else {
           Query<User> query =
-              db.userTb.query(User_.number.equals(checkList[i].number)).build();
+              m.db.userTb.query(User_.number.equals(checkList[i].number)).build();
           User? a = query.findUnique();
           query.close();
-          db.userTb.remove(a!.id as int);
+          m.db.userTb.remove(a!.id as int);
           checkList.remove(checkList[i]);
           _users.remove(a);
           notifyListeners();
@@ -76,7 +73,7 @@ class Users with ChangeNotifier {
       }
 
       if (contacts.isNotEmpty) {
-        var url = Uri.parse(ip + '/app/checkUsers');
+        var url = Uri.parse(m.ip + 'app/checkUsers');
         var response = await http.post(
           url,
           body: {'users': json.encode(contacts)},
@@ -99,12 +96,12 @@ class Users with ChangeNotifier {
               msgs: [],
               moments: [],
             );
-            if (db.userTb
+            if (m.db.userTb
                 .query(User_.username.equals(user.username))
                 .build()
                 .find()
                 .isEmpty) {
-              db.userTb.put(user);
+              m.db.userTb.put(user);
               _users.add(user);
               notifyListeners();
             }
@@ -118,7 +115,7 @@ class Users with ChangeNotifier {
 
   void init() async {
     if (_users.isEmpty) {
-      Query<User> query = db.userTb.query().build();
+      Query<User> query = m.db.userTb.query().build();
       List<User> user = query.find();
       query.close();
       for (var item in user) {
@@ -138,7 +135,7 @@ class Users with ChangeNotifier {
         bio: user.bio,
         msgs: user.msgs,
         moments: user.moments);
-    db.userTb.put(x);
+    m.db.userTb.put(x);
     _users.removeWhere((element) => element.id == user.id);
     _users.add(x);
     notifyListeners();
@@ -155,7 +152,7 @@ class Users with ChangeNotifier {
       msgs: [],
       moments: a.moments,
     );
-    db.userTb.put(a);
+    m.db.userTb.put(a);
     _users.remove(a);
     _users.add(user);
     notifyListeners();
@@ -174,15 +171,15 @@ class Users with ChangeNotifier {
         msgs: [],
         moments: _users[i].moments,
       );
-      db.userTb.put(a);
+      m.db.userTb.put(a);
       _users.removeAt(i);
       _users.add(a);
     }
     notifyListeners();
   }
 
-  void addMoment(User u, String m) {
-    u.moments.add(m);
+  void addMoment(User u, String me) {
+    u.moments.add(me);
     User x = User(
       id: u.id,
       username: u.username,
@@ -193,7 +190,7 @@ class Users with ChangeNotifier {
       msgs: u.msgs,
       moments: u.moments,
     );
-    db.userTb.put(x);
+    m.db.userTb.put(x);
     _users.removeWhere((element) => element.id == u.id);
     _users.add(x);
     notifyListeners();

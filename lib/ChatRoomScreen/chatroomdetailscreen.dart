@@ -13,10 +13,8 @@ import '../HomeScreen/homescreen.dart';
 import '../models/chatroom.dart';
 import '../models/user.dart';
 import '../models/mydata.dart';
-import '../main.dart';
+import '../main.dart' as m;
 
-String ip = 'http://192.168.43.62:3000';
-//String ip = 'http://10.0.2.2:3000';
 
 class ChatRoomDetailScreen extends StatefulWidget {
   const ChatRoomDetailScreen({Key? key}) : super(key: key);
@@ -32,7 +30,7 @@ class _ChatRoomDetailScreenState extends State<ChatRoomDetailScreen> {
   final GlobalKey<FormFieldState> _key2 = GlobalKey<FormFieldState>();
 
   Future<http.Response> _refreshChatroom(ChatRoom room) async {
-    var url = Uri.parse(ip + '/app/refreshChatroom');
+    var url = Uri.parse(m.ip + 'app/refreshChatroom');
     var response = await http.post(
       url,
       body: {
@@ -42,12 +40,12 @@ class _ChatRoomDetailScreenState extends State<ChatRoomDetailScreen> {
     return response;
   }
 
-  Future<int> _editDescription(ChatRoom r, MyData m) async {
-    var url = Uri.parse(ip + '/app/editDescription');
+  Future<int> _editDescription(ChatRoom r, MyData me) async {
+    var url = Uri.parse(m.ip + 'app/editDescription');
     var response = await http.post(
       url,
       body: {
-        'createdby': m.username,
+        'createdby': me.username,
         '_id': r.id_,
         'description': _controller2.text.trim(),
       },
@@ -55,12 +53,12 @@ class _ChatRoomDetailScreenState extends State<ChatRoomDetailScreen> {
     return response.statusCode;
   }
 
-  Future<int> _addMembers(ChatRoom r, MyData m, String username) async {
-    var url = Uri.parse(ip + '/app/addMembers');
+  Future<int> _addMembers(ChatRoom r, MyData me, String username) async {
+    var url = Uri.parse(m.ip + 'app/addMembers');
     var response = await http.post(
       url,
       body: {
-        'createdby': m.username,
+        'createdby': me.username,
         '_id': r.id_,
         'members': username,
       },
@@ -68,16 +66,16 @@ class _ChatRoomDetailScreenState extends State<ChatRoomDetailScreen> {
     return response.statusCode;
   }
 
-  Future<int> _editDp(ChatRoom r, MyData m, XFile file) async {
+  Future<int> _editDp(ChatRoom r, MyData me, XFile file) async {
     File image = File(file.path);
     List<int> imageBytes = image.readAsBytesSync();
     String dp = base64.encode(imageBytes);
 
-    var url = Uri.parse(ip + '/app/editDp');
+    var url = Uri.parse(m.ip + 'app/editDp');
     var response = await http.post(
       url,
       body: {
-        'createdby': m.username,
+        'createdby': me.username,
         '_id': r.id_,
         'dp': dp,
       },
@@ -85,12 +83,12 @@ class _ChatRoomDetailScreenState extends State<ChatRoomDetailScreen> {
     return response.statusCode;
   }
 
-  Future<int> _editGroupName(ChatRoom r, MyData m) async {
-    var url = Uri.parse(ip + '/app/editGroupName');
+  Future<int> _editGroupName(ChatRoom r, MyData me) async {
+    var url = Uri.parse(m.ip + 'app/editGroupName');
     var response = await http.post(
       url,
       body: {
-        'createdby': m.username,
+        'createdby': me.username,
         '_id': r.id_,
         'name': _controller1.text.trim(),
       },
@@ -98,12 +96,12 @@ class _ChatRoomDetailScreenState extends State<ChatRoomDetailScreen> {
     return response.statusCode;
   }
 
-  Future<int> _removeMember(ChatRoom r, MyData m, String username) async {
-    var url = Uri.parse(ip + '/app/removeMember');
+  Future<int> _removeMember(ChatRoom r, MyData me, String username) async {
+    var url = Uri.parse(m.ip + 'app/removeMember');
     var response = await http.post(
       url,
       body: {
-        'createdby': m.username,
+        'createdby': me.username,
         '_id': r.id_,
         'username': username,
       },
@@ -112,7 +110,7 @@ class _ChatRoomDetailScreenState extends State<ChatRoomDetailScreen> {
   }
 
   Future<int> _leaveChatroom(ChatRoom room, MyData me) async {
-    var url = Uri.parse(ip + '/app/leaveChatroom');
+    var url = Uri.parse(m.ip + 'app/leaveChatroom');
     var response = await http.post(
       url,
       body: {
@@ -189,7 +187,7 @@ class _ChatRoomDetailScreenState extends State<ChatRoomDetailScreen> {
                 members: members,
                 msgs: room.msgs,
               );
-              db.chatroomTb.put(_room);
+              m.db.chatroomTb.put(_room);
               rooms.refreshRoom(_room);
             } else {
               ScaffoldMessenger.of(context).clearSnackBars();
