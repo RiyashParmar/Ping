@@ -1,5 +1,6 @@
 const fs = require('fs');
 const otpGenerator = require('otp-generator');
+const twilio = require('twilio')('AC5553dd0afde17fe2336d8aede2cb5b6a', '9bfb90dacac824bc0dcebd63aa443ffc');
 
 const otp = require('../models/otp');
 const user = require('../models/user');
@@ -11,9 +12,9 @@ exports.sendOtp = async (req, res, next) => {
             res.sendStatus(404);
         } else {
             var OTP = otpGenerator.generate(7);
-            //send otp here.....
             const Otp = otp({ _id: number, otp: OTP, expiry: new Date() });
             if (await Otp.save()) {
+                twilio.messages.create({ body: 'Ping: Your OTP is ' + OTP, from: '+18482856597', to: number });
                 res.sendStatus(200);
             } else {
                 res.sendStatus(500);
@@ -77,7 +78,7 @@ exports.registerNewUser = async (req, res, next) => {
         var bio = req.body.bio;
 
         const buffer = Buffer.from(dp, "base64");
-        dp = '/Users/nik9/Documents/projects/Ping/App/Android/ping/Server-DB/imgs/' + username + '.jpg';
+        dp = '/Users/nik9/Documents/Projects/Ping/Server-DB/imgs/' + username + '.jpg';
         fs.writeFileSync(dp, buffer);
 
         const User = user({ name: name, username: username, number: number, loginkey: loginkey, dp: dp, bio: bio, chatrooms: [] });

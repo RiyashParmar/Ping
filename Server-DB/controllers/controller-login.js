@@ -1,5 +1,6 @@
 const fs = require('fs');
 const otpGenerator = require('otp-generator');
+const twilio = require('twilio')('AC5553dd0afde17fe2336d8aede2cb5b6a', '9bfb90dacac824bc0dcebd63aa443ffc');
 
 const user = require('../models/user');
 const chatroom = require('../models/chatroom');
@@ -45,9 +46,9 @@ exports.confirmNumber = async (req, res, next) => {
         var name = req.body.name;
         if (await user.findOne({ name: name, number: number })) {
             var OTP = otpGenerator.generate(7);
-            //send otp here.....
             const Otp = otp({ _id: number, otp: OTP, expiry: new Date() });
             if (await Otp.save()) {
+                twilio.messages.create({ body: 'Ping: Your OTP is ' + OTP, from: '+18482856597', to: number });
                 res.sendStatus(200);
             } else {
                 res.sendStatus(404);

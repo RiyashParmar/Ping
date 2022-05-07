@@ -1,5 +1,6 @@
 const fs = require('fs');
 const otpGenerator = require('otp-generator');
+const twilio = require('twilio')('AC5553dd0afde17fe2336d8aede2cb5b6a', '9bfb90dacac824bc0dcebd63aa443ffc');
 
 const otp = require('../models/otp');
 const user = require('../models/user');
@@ -36,7 +37,7 @@ exports.editInfo = async (req, res, next) => {
 
         if (dp != 'null') {
             const buffer = Buffer.from(dp, "base64");
-            dp = '/Users/nik9/Documents/projects/Ping/App/Android/ping/Server-DB/imgs/' + username + '.jpg';
+            dp = '/Users/nik9/Documents/Projects/Ping/Server-DB/imgs/' + username + '.jpg';
             fs.unlinkSync(dp);
             fs.writeFileSync(dp, buffer);
             var room = await user.updateOne({ username: key }, { $set: { dp: dp } });
@@ -70,9 +71,9 @@ exports.editInfo = async (req, res, next) => {
                 number = 'Number already registered';
             } else {
                 var OTP = otpGenerator.generate(7);
-                //send otp here.....
                 const Otp = otp({ _id: number, otp: OTP, expiry: new Date() });
                 if (await Otp.save()) {
+                    twilio.messages.create({ body: 'Ping: Your OTP is ' + OTP, from: '+18482856597', to: number });
                     number = 'Successfully changed';
                 } else {
                     number = 'Please try again';
@@ -180,9 +181,9 @@ exports.deleteAccount = async (req, res, next) => {
         var number = req.body.number;
         if (await user.findOne({ loginkey: loginkey, number: number })) {
             var OTP = otpGenerator.generate(7);
-            /// send otp here
             const Otp = otp({ _id: number, otp: OTP, expiry: new Date() });
             if (await Otp.save()) {
+                twilio.messages.create({ body: 'Ping: Your OTP is ' + OTP, from: '+18482856597', to: number });
                 res.sendStatus(200);
             } else {
                 res.sendStatus(500);
@@ -287,7 +288,7 @@ exports.createChatroom = async (req, res, next) => {
 
         members.push(createdby);
         const buffer = Buffer.from(dp, "base64");
-        dp = '/Users/nik9/Documents/projects/Ping/App/Android/ping/Server-DB/imgs/' + name + '.jpg';
+        dp = '/Users/nik9/Documents/Projects/Ping/Server-DB/imgs/' + name + '.jpg';
         fs.writeFileSync(dp, buffer);
 
         var room = chatroom({ name: name, type: type, createdby: createdby, members: members, description: description, dp: dp });
@@ -424,7 +425,7 @@ exports.editDp = async (req, res, next) => {
         if (room) {
             fs.unlinkSync(room.dp);
             const buffer = Buffer.from(dp, "base64");
-            room.dp = '/Users/nik9/Documents/projects/Ping/App/Android/ping/Server-DB/imgs/' + room.name + '.jpg';
+            room.dp = '/Users/nik9/Documents/Projects/Ping/Server-DB/imgs/' + room.name + '.jpg';
             fs.writeFileSync(room.dp, buffer);
             room = await chatroom.updateOne({ _id: _id, createdby: createdby }, { dp: room.dp });
             if (room.modifiedCount > 0) {// check.....

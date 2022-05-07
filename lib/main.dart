@@ -33,8 +33,8 @@ import 'models/db.dart';
 import 'models/user.dart';
 import 'models/mydata.dart';
 
-//String ip = 'https://ping-chat-appp.herokuapp.com/';
-String ip = 'http://192.168.43.62:3000/';
+//String ip = 'https://chat-ping.herokuapp.com/';
+String ip = 'http://10.0.2.2:3000/'; // Configure as per your system
 
 //The Main function the entry point of the app
 Future<void> main() async {
@@ -314,7 +314,7 @@ class _PingState extends State<Ping> {
             ReceiveIntentScreen.routeName: (ctx) => const ReceiveIntentScreen(),
             WatchPartyScreen.routeName: (ctx) => const WatchPartyScreen(),
           },
-          debugShowCheckedModeBanner: true,
+          debugShowCheckedModeBanner: false,
         ),
       ),
     );

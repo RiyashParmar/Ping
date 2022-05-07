@@ -141,7 +141,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: IntlPhoneField(
                           controller: _controller2,
                           initialCountryCode: 'IN',
-                          autovalidateMode: AutovalidateMode.always,
                           keyboardType: TextInputType.phone,
                           decoration: InputDecoration(
                             enabledBorder: UnderlineInputBorder(
@@ -407,7 +406,6 @@ class _RecoveryState extends State<Recovery> {
                             initialCountryCode: 'IN',
                             readOnly: otp,
                             controller: _controller1,
-                            autovalidateMode: AutovalidateMode.always,
                             decoration: InputDecoration(
                               enabledBorder: UnderlineInputBorder(
                                 borderSide: BorderSide(
