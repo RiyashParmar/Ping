@@ -33,7 +33,6 @@ import 'models/db.dart';
 import 'models/user.dart';
 import 'models/mydata.dart';
 
-//String ip = 'https://chat-ping.herokuapp.com/';
 String ip = 'http://10.0.2.2:3000/'; // Configure as per your system
 
 //The Main function the entry point of the app
